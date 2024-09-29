@@ -46,6 +46,7 @@
 #include <immintrin.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/time.h>	//for gettimeofday using gcc
 
 typedef __uint128_t uint128_t;
 
@@ -238,6 +239,7 @@ static __m512d dbias;
 static __m512i vbias1;
 static __m512i vbias2;
 static __m512i vbias3;
+static __m512i lo52mask;
 
 __inline static __m512i mul52lo(__m512i b, __m512i c)
 {
@@ -266,6 +268,8 @@ __inline static void mul52lohi(__m512i b, __m512i c, __m512i* l, __m512i* h)
 
 #endif
 
+
+
 #ifdef IFMA
 #define _mm512_mullo_epi52(c, a, b) \
     c = _mm512_madd52lo_epu64(_mm512_set1_epi64(0), a, b);
@@ -283,6 +287,21 @@ __inline static void mul52lohi(__m512i b, __m512i c, __m512i* l, __m512i* h)
     prod1_hd = _mm512_sub_pd(castpd(vbias2), prod1_hd); \
 	prod1_ld = _mm512_fmadd_round_pd(prod1_ld, prod2_ld, prod1_hd, (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC)); \
 	lo = _mm512_add_epi64(lo, _mm512_sub_epi64(castepu(prod1_ld), vbias3));
+	
+#define VEC_MUL2_ACCUM_LOHI_PD(c, a, b, lo1, hi1, lo2, hi2) \
+	prod1_ld = _mm512_cvtepu64_pd(a);		\
+	prod2_ld = _mm512_cvtepu64_pd(b);		\
+	prod3_ld = _mm512_cvtepu64_pd(c);		\
+    prod1_hd = _mm512_fmadd_round_pd(prod1_ld, prod3_ld, dbias, (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC)); \
+	prod2_hd = _mm512_fmadd_round_pd(prod2_ld, prod3_ld, dbias, (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC)); \
+    hi1 = _mm512_add_epi64(hi1, _mm512_sub_epi64(castepu(prod1_hd), vbias1)); \
+	hi2 = _mm512_add_epi64(hi2, _mm512_sub_epi64(castepu(prod2_hd), vbias1)); \
+    prod1_hd = _mm512_sub_pd(castpd(vbias2), prod1_hd); \
+	prod2_hd = _mm512_sub_pd(castpd(vbias2), prod2_hd); \
+	prod1_ld = _mm512_fmadd_round_pd(prod1_ld, prod3_ld, prod1_hd, (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC)); \
+	prod2_ld = _mm512_fmadd_round_pd(prod2_ld, prod3_ld, prod2_hd, (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC)); \
+	lo1 = _mm512_add_epi64(lo1, _mm512_sub_epi64(castepu(prod1_ld), vbias3)); \
+	lo2 = _mm512_add_epi64(lo2, _mm512_sub_epi64(castepu(prod2_ld), vbias3));
 
 #define _mm512_mullo_epi52(c, a, b) \
     c = _mm512_and_si512(_mm512_mullo_epi64(a, b), _mm512_set1_epi64(0x000fffffffffffffull));
@@ -298,6 +317,29 @@ void printvec(char* msg, __m512i v)
 		printf("%016lx ", m[i]);
 	printf("\n");
 	return;
+}
+
+
+double _difftime(struct timeval* start, struct timeval* end)
+{
+    double secs;
+    double usecs;
+
+    if (start->tv_sec == end->tv_sec) {
+        secs = 0;
+        usecs = end->tv_usec - start->tv_usec;
+    }
+    else {
+        usecs = 1000000 - start->tv_usec;
+        secs = end->tv_sec - (start->tv_sec + 1);
+        usecs += end->tv_usec;
+        if (usecs >= 1000000) {
+            usecs -= 1000000;
+            secs += 1;
+        }
+    }
+
+    return secs + usecs / 1000000.;
 }
 
 #define carryprop(lo, hi, mask) \
@@ -369,6 +411,48 @@ __m512i _mm512_mask_sbb_epi52(__m512i a, __mmask8 m, __mmask8 c, __m512i b, __mm
 }
 
 
+__inline static void mulredc52_mask_add_vec(__m512i* c0, __mmask8 addmsk, __m512i a0, __m512i b0, __m512i n0, __m512i vrho)
+{
+	// CIOS modular multiplication with normal (negative) single-word nhat
+	__m512i m;
+	__m512i t0, t1, C1;
+
+#ifndef IFMA
+	__m512d prod1_hd, prod2_hd;
+	__m512d prod1_ld, prod2_ld;
+	__m512i i0, i1;
+#endif
+
+	__m512i zero = _mm512_set1_epi64(0);
+	__m512i one = _mm512_set1_epi64(1);
+	__mmask8 scarry2;
+	__mmask8 scarry;
+
+	t0 = t1 = C1 = zero;
+
+	VEC_MUL_ACCUM_LOHI_PD(a0, b0, t0, t1);
+
+	// m0
+	m = mul52lo(t0, vrho);
+
+	VEC_MUL_ACCUM_LOHI_PD(m, n0, t0, t1);
+
+	// we throw t0 away after this so first propagate its carry.
+	t0 = _mm512_add_epi64(t1, one);
+
+	__mmask8 bmsk = _mm512_cmpge_epu64_mask(t0, n0);
+	t0 = _mm512_mask_sub_epi64(t0, bmsk, t0, n0);
+	
+	// conditional addmod (double result)
+	// add
+	t0 = _mm512_mask_slli_epi64(t0, addmsk, t0, 1);
+	bmsk = _mm512_mask_cmpgt_epu64_mask(addmsk,t0, n0);
+	*c0 = _mm512_mask_sub_epi64(t0, bmsk & addmsk, t0, n0);
+	// _mm512_and_epi64(t0, lo52mask);
+	
+	return;
+}
+
 __inline static void mask_mulredc104_vec(__m512i* c1, __m512i* c0, __mmask8 mulmsk,
 	__m512i a1, __m512i a0, __m512i b1, __m512i b0, __m512i n1, __m512i n0, __m512i vrho)
 {
@@ -397,12 +481,15 @@ __inline static void mask_mulredc104_vec(__m512i* c1, __m512i* c0, __mmask8 mulm
 
 	VEC_MUL_ACCUM_LOHI_PD(a0, b0, t0, t1);
 	VEC_MUL_ACCUM_LOHI_PD(a1, b0, t1, t2);
+	//VEC_MUL2_ACCUM_LOHI_PD(b0, a0, a1, t0, t1, C1, t2);
+	//t1 = _mm512_add_epi64(t1, C1);
 
 	// m0
 	m = mul52lo(t0, vrho);
 
 	VEC_MUL_ACCUM_LOHI_PD(m, n0, t0, C1);
 	VEC_MUL_ACCUM_LOHI_PD(m, n1, t1, C2);
+	//VEC_MUL2_ACCUM_LOHI_PD(m, n0, n1, t0, C1, t1, C2);
 
 	t1 = _mm512_add_epi64(t1, C1);
 	t2 = _mm512_add_epi64(t2, C2);
@@ -413,6 +500,7 @@ __inline static void mask_mulredc104_vec(__m512i* c1, __m512i* c0, __mmask8 mulm
 
 	VEC_MUL_ACCUM_LOHI_PD(a0, b1, t0, C1);
 	VEC_MUL_ACCUM_LOHI_PD(a1, b1, t1, t2);
+	//VEC_MUL2_ACCUM_LOHI_PD(b1, a0, a1, t0, C1, t1, t2);
 
 	t1 = _mm512_add_epi64(t1, C1);
 	C1 = C2 = zero;
@@ -422,6 +510,7 @@ __inline static void mask_mulredc104_vec(__m512i* c1, __m512i* c0, __mmask8 mulm
 
 	VEC_MUL_ACCUM_LOHI_PD(m, n0, t0, C1);
 	VEC_MUL_ACCUM_LOHI_PD(m, n1, t1, t2);
+	//VEC_MUL2_ACCUM_LOHI_PD(m, n0, n1, t0, C1, t1, t2);
 
 	t1 = _mm512_add_epi64(t1, C1);
 
@@ -793,7 +882,126 @@ static uint64_t multiplicative_inverse(uint64_t a)
 	return x4;
 }
 
-uint8_t fermat_prp_x8(uint64_t* n)
+
+#if defined(INTEL_COMPILER) || defined(INTEL_LLVM_COMPILER)
+#define ROUNDING_MODE (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC)
+#else
+#define ROUNDING_MODE _MM_FROUND_CUR_DIRECTION
+#endif
+
+
+__m512i rem_epu64_x8(__m512i n, __m512i d)
+{
+	// DANGER: I haven't proven this works for every possible input.
+	__m512d d1pd = _mm512_cvtepu64_pd(d);
+	__m512d n1pd = _mm512_cvtepu64_pd(n);
+	__m512i q, q2, r;
+
+	//n1pd = _mm512_div_pd(n1pd, d1pd);
+	//q = _mm512_cvt_roundpd_epu64(n1pd, (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC));
+	
+	n1pd = _mm512_div_round_pd(n1pd, d1pd, ROUNDING_MODE);
+	q = _mm512_cvttpd_epu64(n1pd);
+	
+	__m512i qd = _mm512_mullox_epi64(q, d);
+	r = _mm512_sub_epi64(n, qd);
+
+	// fix q too big by a little, with special check for
+	// numerators close to 2^64 and denominators close to 1
+	// DANGER: the special check is unused for 64-bits, only for 32-bits.
+	// This routine is only used in modmul32 and input numerators
+	// shouldn't get that large in normal cases.  The factor base
+	// would need to be close to 2^32...
+	__mmask8 err = _mm512_cmpgt_epu64_mask(r, n); // |
+		//(_mm512_cmpgt_epu64_mask(r, d) & _mm512_cmplt_epu64_mask(
+		//	_mm512_sub_epi64(_mm512_set1_epi64(0), r), _mm512_set1_epi64(1024)));
+	if (err)
+	{
+		n1pd = _mm512_cvtepu64_pd(_mm512_sub_epi64(_mm512_set1_epi64(0), r));
+		
+		//n1pd = _mm512_div_pd(n1pd, d1pd);
+		//q2 = _mm512_add_epi64(_mm512_set1_epi64(1), _mm512_cvt_roundpd_epu64(n1pd,
+		//	(_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC)));
+
+		n1pd = _mm512_div_round_pd(n1pd, d1pd, ROUNDING_MODE);
+		q2 = _mm512_add_epi64(_mm512_set1_epi64(1), _mm512_cvttpd_epu64(n1pd));
+
+		q = _mm512_mask_sub_epi64(q, err, q, q2);
+		r = _mm512_mask_add_epi64(r, err, r, _mm512_mullox_epi64(q2, d));
+	}
+
+	// fix q too small by a little bit
+	err = _mm512_cmpge_epu64_mask(r, d);
+	if (err)
+	{
+		n1pd = _mm512_cvtepu64_pd(r);
+		
+		//n1pd = _mm512_div_pd(n1pd, d1pd);
+		//q2 = _mm512_cvt_roundpd_epu64(n1pd,
+		//	(_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC));
+
+		n1pd = _mm512_div_round_pd(n1pd, d1pd, ROUNDING_MODE);
+		q2 = _mm512_cvttpd_epu64(n1pd);
+
+		q = _mm512_mask_add_epi64(q, err, q, q2);
+		r = _mm512_mask_sub_epi64(r, err, r, _mm512_mullox_epi64(q2, d));
+	}
+
+	return r;
+}
+
+uint8_t fermat_prp_52x8(uint64_t* n)
+{
+	// assumes has no small factors.  assumes n <= 52 bits.
+	// assumes n is a list of 8 52-bit integers
+	// do a base-2 fermat prp test on each using LR binexp.
+	__m512i vrho = multiplicative_inverse104_x8(n);
+	__m512i unity;
+	__m512i r;
+	__m512i nvec;
+	__m512i evec;
+	__m512i m;
+	__m512i zero = _mm512_setzero_si512();
+	__m512i one = _mm512_set1_epi64(1);
+
+	vrho = _mm512_and_epi64(_mm512_sub_epi64(zero, vrho), lo52mask);
+	nvec = loadu64(n);
+	evec = _mm512_sub_epi64(nvec, one);
+
+#if defined(INTEL_COMPILER) || defined(INTEL_LLVM_COMPILER)
+	r = _mm512_rem_epu64(_mm512_set1_epi64(1ULL<<52), nvec);
+#else
+	r = rem_epu64_x8(_mm512_set1_epi64(1ULL<<52), nvec);
+#endif
+
+	// penultimate-hi-bit mask
+	m = _mm512_sub_epi64(_mm512_set1_epi64(62), _mm512_lzcnt_epi64(evec));
+	m = _mm512_sllv_epi64(_mm512_set1_epi64(1), m);
+
+	// we know the first bit is set and the first squaring is of unity,
+	// so we can do the first iteration manually with no squaring.
+	unity = r;
+
+	r = _mm512_add_epi64(r, r);
+	__mmask8 ge = _mm512_cmpge_epi64_mask(r, nvec);
+	r = _mm512_mask_sub_epi64(r, ge, r, nvec);
+
+	while (_mm512_cmpgt_epu64_mask(m, zero))
+	{
+		__mmask8 bitcmp = _mm512_test_epi64_mask(m, evec);
+		mulredc52_mask_add_vec(&r, bitcmp, r, r, nvec, vrho);
+		m = _mm512_srli_epi64(m, 1);
+	}
+
+	// AMM possibly needs a final correction by n
+	ge = _mm512_cmpge_epi64_mask(r, nvec);
+	r = _mm512_mask_sub_epi64(r, ge, r, nvec);
+
+	return _mm512_cmpeq_epu64_mask(unity, r);
+}
+
+
+uint8_t fermat_prp_104x8(uint64_t* n)
 {
 	// assumes has no small factors.  assumes n >= 54 bits.
 	// assumes n is a list of 8 104-bit integers (16 52-bit words)
@@ -861,9 +1069,6 @@ uint8_t fermat_prp_x8(uint64_t* n)
 		m = _mm512_srli_epi64(m, 1);
 	}
 
-	storeu64(r.data[0], r0);
-	storeu64(r.data[1], r1);
-
 	// AMM possibly needs a final correction by n
 	addmod104_x8(&r1, &r0, zero, zero, r1, r0, nvec[1], nvec[0]);
 
@@ -874,7 +1079,7 @@ uint8_t fermat_prp_x8(uint64_t* n)
 	return isprp;
 }
 
-uint8_t MR_sprp_x8(uint64_t* n, uint64_t *bases)
+uint8_t MR_sprp_104x8(uint64_t* n, uint64_t *bases)
 {
 	// assumes has no small factors.  assumes n >= 54 bits.
 	// assumes n is a list of 8 104-bit integers (16 52-bit words)
@@ -1069,50 +1274,171 @@ int main(int argc, char** argv)
 	vbias3 = _mm512_set1_epi64(0x4330000000000000ULL);
 #endif
 
-	for (k = 0; k < 4; k++)
+	lo52mask = _mm512_set1_epi64(0x000fffffffffffffull);
+
+	struct timeval start, stop;
+	int bits;
+	uint64_t elapsed;
+
+	for (bits = 11; bits <= 52; bits++)
 	{
-		correct = 0;
-		
-		int bits = 100;
-
-		for (i = 0; i < 8; i++)
-		{
-			uint128_t x;
-			do {
-				x = my_random();
-				uint128_t maskAnd = ((uint128_t)1 << (bits - 1)) - 1;	// clear msbits
-				uint128_t maskOr = ((uint128_t)1 << (bits - 1)) | ((uint128_t)1 << (bits / 2));	// force msb, force another bit
-				x &= maskAnd;
-				x |= maskOr;
-				x /= 6;
-				x *= 6;	// now a multiple of 6
-				x += 1;	// number like 6*k + 1
-			} while (x >> (bits - 1) != 1);
-			prp[i] = (uint64_t)x & 0xfffffffffffffull;
-			prp[i+8] = (uint64_t)(x >> 52) & 0xfffffffffffffull;
-		}
-
+		uint32_t numprp = 0;
 		uint64_t ticks1 = my_rdtsc();
-
-		uint64_t inc = 4;
-		int num = 1000000;
-		int j;
-
-		for (j = 0; j < num; j++)
-		{
-			correct += _mm_popcnt_u32(fermat_prp_x8(prp));
+		uint64_t ticks2;
+		uint32_t num = 1000000;
+		double telapsed = 0;
+		int k;
+		
+		gettimeofday(&start, NULL);
+		
+		do {
 			for (i = 0; i < 8; i++)
 			{
-				prp[i] += inc;
+				uint64_t x;
+				do {
+					x = my_random();
+					uint128_t maskAnd = ((uint128_t)1 << (bits - 1)) - 1;	// clear msbits
+					uint128_t maskOr = ((uint128_t)1 << (bits - 1)) | ((uint128_t)1 << (bits / 2));	// force msb, force another bit
+					x &= maskAnd;
+					x |= maskOr;
+					x /= 6;
+					x *= 6;	// now a multiple of 6
+					x += 1;	// number like 6*k + 1
+				} while (x >> (bits - 1) != 1);
+				prp[i] = (uint64_t)x & 0xfffffffffffffull;
 			}
-			inc = 6 - inc;
-		}
 
-		uint64_t ticks2 = my_rdtsc();
-		printf("total ticks = %lu, ticks per input = %lu\n",
-			ticks2 - ticks1, (ticks2 - ticks1) / (num * 8));
-		printf("found %d fermat-prp out of %u inputs: %1.2f%%\n",
-			correct, num * 8, 100. * (double)correct / (double)(num * 8));
+			uint64_t inc = 4;
+			int j;
+
+			for (j = 0; j < num; j++)
+			{
+				numprp += _mm_popcnt_u32(prp[0] + prp[1] ^ prp[2] & prp[3] | prp[4] + prp[5] - prp[6] ^ prp[7]);
+				for (i = 0; i < 8; i++)
+				{
+					prp[i] += inc;
+				}
+				inc = 6 - inc;
+			}
+			
+			ticks2 = my_rdtsc();
+		} while (0);
+
+		gettimeofday(&stop, NULL);
+		telapsed = _difftime(&start, &stop);
+		printf("total overhead ticks = %lu\n", ticks2 - ticks1);
+		printf("dummy result = %u\n", numprp);
+		printf("elapsed time: %1.4f sec\n", telapsed);
+		
+		numprp = 0;
+		k = 0;
+		elapsed = 0;
+		telapsed = 0;
+		do {
+			for (i = 0; i < 8; i++)
+			{
+				uint64_t x;
+				do {
+					x = my_random();
+					uint128_t maskAnd = ((uint128_t)1 << (bits - 1)) - 1;	// clear msbits
+					uint128_t maskOr = ((uint128_t)1 << (bits - 1)) | ((uint128_t)1 << (bits / 2));	// force msb, force another bit
+					x &= maskAnd;
+					x |= maskOr;
+					x /= 6;
+					x *= 6;	// now a multiple of 6
+					x += 1;	// number like 6*k + 1
+				} while (x >> (bits - 1) != 1);
+				prp[i] = (uint64_t)x & 0xfffffffffffffull;
+			}
+
+			ticks1 = my_rdtsc();
+			gettimeofday(&start, NULL);
+		
+			uint64_t inc = 4;
+			int j;
+
+			for (j = 0; j < num; j++)
+			{
+				numprp += _mm_popcnt_u32(fermat_prp_52x8(prp));
+				for (i = 0; i < 8; i++)
+				{
+					prp[i] += inc;
+				}
+				inc = 6 - inc;
+			}
+			
+			k++;
+			ticks2 = my_rdtsc();
+			elapsed += (ticks2 - ticks1);
+			gettimeofday(&stop, NULL);
+			telapsed += _difftime(&start, &stop);
+		
+		} while (elapsed < (1ull<<31));
+
+		printf("total ticks = %lu, ticks per %d-bit input = %lu\n",
+			elapsed, bits, (elapsed) / (k * num * 8));
+		printf("found %d fermat-prp out of %u %d-bit inputs: %1.2f%%\n",
+			numprp, k * num * 8, bits, 100. * (double)numprp / (double)(k * num * 8));
+		printf("elapsed time: %1.4f sec, %1.4f us / input\n", telapsed, 1000000. * telapsed / (double)(k * num * 8));
+	}
+	
+	for (bits = 54; bits <= 104; bits++)
+	{
+		uint32_t numprp = 0;
+		uint64_t ticks1 = my_rdtsc();
+		uint64_t ticks2;
+		uint32_t num = 100000;
+		double telapsed = 0;
+		int k;
+
+		k = 0;
+		elapsed = 0;
+		do {
+			for (i = 0; i < 8; i++)
+			{
+				uint128_t x;
+				do {
+					x = my_random();
+					uint128_t maskAnd = ((uint128_t)1 << (bits - 1)) - 1;	// clear msbits
+					uint128_t maskOr = ((uint128_t)1 << (bits - 1)) | ((uint128_t)1 << (bits / 2));	// force msb, force another bit
+					x &= maskAnd;
+					x |= maskOr;
+					x /= 6;
+					x *= 6;	// now a multiple of 6
+					x += 1;	// number like 6*k + 1
+				} while (x >> (bits - 1) != 1);
+				prp[i] = (uint64_t)x & 0xfffffffffffffull;
+				prp[i+8] = (uint64_t)(x >> 52) & 0xfffffffffffffull;
+			}
+
+			uint64_t inc = 4;
+			int j;
+			
+			ticks1 = my_rdtsc();
+			gettimeofday(&start, NULL);
+
+			for (j = 0; j < num; j++)
+			{
+				numprp += _mm_popcnt_u32(fermat_prp_104x8(prp));
+				for (i = 0; i < 8; i++)
+				{
+					prp[i] += inc;
+				}
+				inc = 6 - inc;
+			}
+
+			k++;
+			ticks2 = my_rdtsc();
+			elapsed += (ticks2 - ticks1);
+			gettimeofday(&stop, NULL);
+			telapsed = +_difftime(&start, &stop);
+		} while (elapsed < (1ull<<31));
+		
+		printf("total ticks = %lu, ticks per %d-bit input = %lu\n",
+			elapsed, bits, (elapsed) / (k * num * 8));
+		printf("found %d fermat-prp out of %u %d-bit inputs: %1.2f%%\n",
+			numprp, k * num * 8, bits, 100. * (double)numprp / (double)(k * num * 8));
+		printf("elapsed time: %1.4f sec, %1.4f us / input\n", telapsed, 1000000. * telapsed / (double)(k * num * 8));
 	}
 
 	// bases for MR-sprp check:
@@ -1126,7 +1452,7 @@ int main(int argc, char** argv)
 	for (k = 0; k < 4; k++)
 	{
 		int num = 1000000;
-		int bits = 103;
+		int bits = 100;
 		printf("commencing test %d of %lu random 6k+1 %d-bit inputs\n", k, num, bits);
 
 		correct = 0;
@@ -1163,9 +1489,11 @@ int main(int argc, char** argv)
 		}
 
 		uint32_t tested = 0;
+		gettimeofday(&start, NULL);
+		
 		while (tested < num)
 		{
-			uint8_t prpmask = MR_sprp_x8(prp, currentbase);
+			uint8_t prpmask = MR_sprp_104x8(prp, currentbase);
 			for (i = 0; i < 8; i++)
 			{
 				if (prpmask & (1 << i))
@@ -1201,11 +1529,14 @@ int main(int argc, char** argv)
 			}
 		}
 
+		gettimeofday(&stop, NULL);
+		double telapsed = _difftime(&start, &stop);
 		uint64_t ticks2 = my_rdtsc();
 		printf("total ticks = %lu, ticks per input = %lu\n",
 			ticks2 - ticks1, (ticks2 - ticks1) / (tested));
 		printf("found %d MR-sprp out of %u inputs: %1.2f%%\n",
 			correct, tested, 100. * (double)correct / (double)(tested));
+		printf("elapsed time: %1.4f sec, %1.2f us / input\n", telapsed, 1000000. * telapsed / (double)tested);
 	}
 
 	return 0;
