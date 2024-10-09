@@ -1,0 +1,864 @@
+total ticks = 1138897016, ticks per 20-bit input = 71
+found 3301360 fermat-prp out of 16000000 20-bit inputs: 20.63%
+elapsed time: 0.2778 sec, 0.0174 us / input
+total ticks = 1179464015, ticks per 21-bit input = 73
+found 3217036 fermat-prp out of 16000000 21-bit inputs: 20.11%
+elapsed time: 0.2877 sec, 0.0180 us / input
+total ticks = 1215160952, ticks per 22-bit input = 75
+found 3134757 fermat-prp out of 16000000 22-bit inputs: 19.59%
+elapsed time: 0.2964 sec, 0.0185 us / input
+total ticks = 1276832291, ticks per 23-bit input = 79
+found 3023571 fermat-prp out of 16000000 23-bit inputs: 18.90%
+elapsed time: 0.3114 sec, 0.0195 us / input
+total ticks = 1311529197, ticks per 24-bit input = 81
+found 2930806 fermat-prp out of 16000000 24-bit inputs: 18.32%
+elapsed time: 0.3199 sec, 0.0200 us / input
+total ticks = 1348909635, ticks per 25-bit input = 84
+found 2828197 fermat-prp out of 16000000 25-bit inputs: 17.68%
+elapsed time: 0.3290 sec, 0.0206 us / input
+total ticks = 1422145680, ticks per 26-bit input = 88
+found 2694829 fermat-prp out of 16000000 26-bit inputs: 16.84%
+elapsed time: 0.3469 sec, 0.0217 us / input
+total ticks = 1461506295, ticks per 27-bit input = 91
+found 2620954 fermat-prp out of 16000000 27-bit inputs: 16.38%
+elapsed time: 0.3565 sec, 0.0223 us / input
+total ticks = 1523301659, ticks per 28-bit input = 95
+found 2516183 fermat-prp out of 16000000 28-bit inputs: 15.73%
+elapsed time: 0.3715 sec, 0.0232 us / input
+total ticks = 1586884090, ticks per 29-bit input = 99
+found 2427781 fermat-prp out of 16000000 29-bit inputs: 15.17%
+elapsed time: 0.3871 sec, 0.0242 us / input
+total ticks = 1642948310, ticks per 30-bit input = 102
+found 2343617 fermat-prp out of 16000000 30-bit inputs: 14.65%
+elapsed time: 0.4007 sec, 0.0250 us / input
+total ticks = 1706350833, ticks per 31-bit input = 106
+found 2259248 fermat-prp out of 16000000 31-bit inputs: 14.12%
+elapsed time: 0.4162 sec, 0.0260 us / input
+total ticks = 1763947838, ticks per 32-bit input = 110
+found 2190720 fermat-prp out of 16000000 32-bit inputs: 13.69%
+elapsed time: 0.4302 sec, 0.0269 us / input
+total ticks = 1816889703, ticks per 33-bit input = 113
+found 2117169 fermat-prp out of 16000000 33-bit inputs: 13.23%
+elapsed time: 0.4431 sec, 0.0277 us / input
+total ticks = 1886915448, ticks per 34-bit input = 117
+found 2064891 fermat-prp out of 16000000 34-bit inputs: 12.91%
+elapsed time: 0.4602 sec, 0.0288 us / input
+total ticks = 1941606414, ticks per 35-bit input = 121
+found 2001256 fermat-prp out of 16000000 35-bit inputs: 12.51%
+elapsed time: 0.4736 sec, 0.0296 us / input
+total ticks = 2005001516, ticks per 36-bit input = 125
+found 1945422 fermat-prp out of 16000000 36-bit inputs: 12.16%
+elapsed time: 0.4890 sec, 0.0306 us / input
+total ticks = 2065463560, ticks per 37-bit input = 129
+found 1890963 fermat-prp out of 16000000 37-bit inputs: 11.82%
+elapsed time: 0.5038 sec, 0.0315 us / input
+total ticks = 2123430754, ticks per 38-bit input = 132
+found 1846344 fermat-prp out of 16000000 38-bit inputs: 11.54%
+elapsed time: 0.5179 sec, 0.0324 us / input
+total ticks = 1089657943, ticks per 39-bit input = 136
+found 901428 fermat-prp out of 8000000 39-bit inputs: 11.27%
+elapsed time: 0.2658 sec, 0.0332 us / input
+total ticks = 1121678369, ticks per 40-bit input = 140
+found 874031 fermat-prp out of 8000000 40-bit inputs: 10.93%
+elapsed time: 0.2736 sec, 0.0342 us / input
+total ticks = 1154312729, ticks per 41-bit input = 144
+found 855351 fermat-prp out of 8000000 41-bit inputs: 10.69%
+elapsed time: 0.2815 sec, 0.0352 us / input
+total ticks = 1185741853, ticks per 42-bit input = 148
+found 835907 fermat-prp out of 8000000 42-bit inputs: 10.45%
+elapsed time: 0.2892 sec, 0.0362 us / input
+total ticks = 1213846492, ticks per 43-bit input = 151
+found 813593 fermat-prp out of 8000000 43-bit inputs: 10.17%
+elapsed time: 0.2961 sec, 0.0370 us / input
+total ticks = 1240842778, ticks per 44-bit input = 155
+found 796248 fermat-prp out of 8000000 44-bit inputs: 9.95%
+elapsed time: 0.3026 sec, 0.0378 us / input
+total ticks = 1273455941, ticks per 45-bit input = 159
+found 778088 fermat-prp out of 8000000 45-bit inputs: 9.73%
+elapsed time: 0.3106 sec, 0.0388 us / input
+total ticks = 1305378500, ticks per 46-bit input = 163
+found 757019 fermat-prp out of 8000000 46-bit inputs: 9.46%
+elapsed time: 0.3184 sec, 0.0398 us / input
+total ticks = 1337570593, ticks per 47-bit input = 167
+found 744573 fermat-prp out of 8000000 47-bit inputs: 9.31%
+elapsed time: 0.3262 sec, 0.0408 us / input
+total ticks = 1366456487, ticks per 48-bit input = 170
+found 730203 fermat-prp out of 8000000 48-bit inputs: 9.13%
+elapsed time: 0.3333 sec, 0.0417 us / input
+total ticks = 1403232339, ticks per 49-bit input = 175
+found 712858 fermat-prp out of 8000000 49-bit inputs: 8.91%
+elapsed time: 0.3423 sec, 0.0428 us / input
+total ticks = 1425052334, ticks per 50-bit input = 178
+found 698737 fermat-prp out of 8000000 50-bit inputs: 8.73%
+elapsed time: 0.3476 sec, 0.0434 us / input
+total ticks = 1458085911, ticks per 51-bit input = 182
+found 686814 fermat-prp out of 8000000 51-bit inputs: 8.59%
+elapsed time: 0.3556 sec, 0.0445 us / input
+total ticks = 1484247027, ticks per 52-bit input = 185
+found 671846 fermat-prp out of 8000000 52-bit inputs: 8.40%
+elapsed time: 0.3620 sec, 0.0453 us / input
+
+total ticks = 1178547337, ticks per 50-bit input = 368
+found 279310 fermat-prp out of 3200000 50-bit inputs: 8.73%
+elapsed time: 0.0719 sec, 0.0225 us / input
+total ticks = 1200207063, ticks per 51-bit input = 375
+found 274352 fermat-prp out of 3200000 51-bit inputs: 8.57%
+elapsed time: 0.0732 sec, 0.0229 us / input
+total ticks = 1225695738, ticks per 52-bit input = 383
+found 267515 fermat-prp out of 3200000 52-bit inputs: 8.36%
+elapsed time: 0.0747 sec, 0.0233 us / input
+total ticks = 1252328067, ticks per 53-bit input = 391
+found 263031 fermat-prp out of 3200000 53-bit inputs: 8.22%
+elapsed time: 0.0765 sec, 0.0239 us / input
+total ticks = 1271915284, ticks per 54-bit input = 397
+found 258088 fermat-prp out of 3200000 54-bit inputs: 8.07%
+elapsed time: 0.0776 sec, 0.0242 us / input
+total ticks = 1300442592, ticks per 55-bit input = 406
+found 254078 fermat-prp out of 3200000 55-bit inputs: 7.94%
+elapsed time: 0.0793 sec, 0.0248 us / input
+total ticks = 1321982475, ticks per 56-bit input = 413
+found 249602 fermat-prp out of 3200000 56-bit inputs: 7.80%
+elapsed time: 0.0805 sec, 0.0252 us / input
+total ticks = 1350276083, ticks per 57-bit input = 421
+found 244406 fermat-prp out of 3200000 57-bit inputs: 7.64%
+elapsed time: 0.0823 sec, 0.0257 us / input
+total ticks = 1365455759, ticks per 58-bit input = 426
+found 241107 fermat-prp out of 3200000 58-bit inputs: 7.53%
+elapsed time: 0.0833 sec, 0.0260 us / input
+total ticks = 1398212873, ticks per 59-bit input = 436
+found 236172 fermat-prp out of 3200000 59-bit inputs: 7.38%
+elapsed time: 0.0853 sec, 0.0267 us / input
+total ticks = 1411813721, ticks per 60-bit input = 441
+found 232073 fermat-prp out of 3200000 60-bit inputs: 7.25%
+elapsed time: 0.0860 sec, 0.0269 us / input
+total ticks = 1077257206, ticks per 61-bit input = 448
+found 170844 fermat-prp out of 2400000 61-bit inputs: 7.12%
+elapsed time: 0.0876 sec, 0.0365 us / input
+total ticks = 1099053093, ticks per 62-bit input = 457
+found 168607 fermat-prp out of 2400000 62-bit inputs: 7.03%
+elapsed time: 0.0893 sec, 0.0372 us / input
+total ticks = 1110662202, ticks per 63-bit input = 462
+found 165401 fermat-prp out of 2400000 63-bit inputs: 6.89%
+elapsed time: 0.0903 sec, 0.0376 us / input
+total ticks = 1131085901, ticks per 64-bit input = 471
+found 164039 fermat-prp out of 2400000 64-bit inputs: 6.83%
+elapsed time: 0.0920 sec, 0.0383 us / input
+total ticks = 1159669912, ticks per 65-bit input = 483
+found 160476 fermat-prp out of 2400000 65-bit inputs: 6.69%
+elapsed time: 0.0943 sec, 0.0393 us / input
+total ticks = 1184360932, ticks per 66-bit input = 493
+found 158253 fermat-prp out of 2400000 66-bit inputs: 6.59%
+elapsed time: 0.0964 sec, 0.0401 us / input
+total ticks = 1200771141, ticks per 67-bit input = 500
+found 156129 fermat-prp out of 2400000 67-bit inputs: 6.51%
+elapsed time: 0.0977 sec, 0.0407 us / input
+total ticks = 1219660456, ticks per 68-bit input = 508
+found 154290 fermat-prp out of 2400000 68-bit inputs: 6.43%
+elapsed time: 0.0993 sec, 0.0414 us / input
+total ticks = 1236659958, ticks per 69-bit input = 515
+found 151217 fermat-prp out of 2400000 69-bit inputs: 6.30%
+elapsed time: 0.1005 sec, 0.0419 us / input
+total ticks = 1253298783, ticks per 70-bit input = 522
+found 148995 fermat-prp out of 2400000 70-bit inputs: 6.21%
+elapsed time: 0.1019 sec, 0.0425 us / input
+total ticks = 1268627412, ticks per 71-bit input = 528
+found 146708 fermat-prp out of 2400000 71-bit inputs: 6.11%
+elapsed time: 0.1032 sec, 0.0430 us / input
+total ticks = 1286377583, ticks per 72-bit input = 535
+found 144693 fermat-prp out of 2400000 72-bit inputs: 6.03%
+elapsed time: 0.1044 sec, 0.0435 us / input
+total ticks = 1304027550, ticks per 73-bit input = 543
+found 143535 fermat-prp out of 2400000 73-bit inputs: 5.98%
+elapsed time: 0.1060 sec, 0.0442 us / input
+total ticks = 1325011473, ticks per 74-bit input = 552
+found 141145 fermat-prp out of 2400000 74-bit inputs: 5.88%
+elapsed time: 0.1081 sec, 0.0451 us / input
+total ticks = 1338014705, ticks per 75-bit input = 557
+found 139520 fermat-prp out of 2400000 75-bit inputs: 5.81%
+elapsed time: 0.1087 sec, 0.0453 us / input
+total ticks = 1355496408, ticks per 76-bit input = 564
+found 137216 fermat-prp out of 2400000 76-bit inputs: 5.72%
+elapsed time: 0.1102 sec, 0.0459 us / input
+total ticks = 1374348167, ticks per 77-bit input = 572
+found 135643 fermat-prp out of 2400000 77-bit inputs: 5.65%
+elapsed time: 0.1116 sec, 0.0465 us / input
+total ticks = 1390383677, ticks per 78-bit input = 579
+found 133360 fermat-prp out of 2400000 78-bit inputs: 5.56%
+elapsed time: 0.1129 sec, 0.0471 us / input
+total ticks = 1413997586, ticks per 79-bit input = 589
+found 132802 fermat-prp out of 2400000 79-bit inputs: 5.53%
+elapsed time: 0.1152 sec, 0.0480 us / input
+total ticks = 1428173336, ticks per 80-bit input = 595
+found 131230 fermat-prp out of 2400000 80-bit inputs: 5.47%
+elapsed time: 0.1161 sec, 0.0484 us / input
+total ticks = 1442653921, ticks per 81-bit input = 601
+found 128578 fermat-prp out of 2400000 81-bit inputs: 5.36%
+elapsed time: 0.1173 sec, 0.0489 us / input
+total ticks = 1461565376, ticks per 82-bit input = 608
+found 126841 fermat-prp out of 2400000 82-bit inputs: 5.29%
+elapsed time: 0.1187 sec, 0.0495 us / input
+total ticks = 1482822769, ticks per 83-bit input = 617
+found 125429 fermat-prp out of 2400000 83-bit inputs: 5.23%
+elapsed time: 0.1206 sec, 0.0503 us / input
+total ticks = 1502069440, ticks per 84-bit input = 625
+found 124437 fermat-prp out of 2400000 84-bit inputs: 5.18%
+elapsed time: 0.1221 sec, 0.0509 us / input
+total ticks = 1520932843, ticks per 85-bit input = 633
+found 122384 fermat-prp out of 2400000 85-bit inputs: 5.10%
+elapsed time: 0.1236 sec, 0.0515 us / input
+total ticks = 1538006104, ticks per 86-bit input = 640
+found 121096 fermat-prp out of 2400000 86-bit inputs: 5.05%
+elapsed time: 0.1251 sec, 0.0521 us / input
+total ticks = 1553603775, ticks per 87-bit input = 647
+found 120314 fermat-prp out of 2400000 87-bit inputs: 5.01%
+elapsed time: 0.1263 sec, 0.0526 us / input
+total ticks = 1567361981, ticks per 88-bit input = 653
+found 118541 fermat-prp out of 2400000 88-bit inputs: 4.94%
+elapsed time: 0.1275 sec, 0.0531 us / input
+total ticks = 1587321888, ticks per 89-bit input = 661
+found 116717 fermat-prp out of 2400000 89-bit inputs: 4.86%
+elapsed time: 0.1292 sec, 0.0538 us / input
+total ticks = 1601874961, ticks per 90-bit input = 667
+found 116415 fermat-prp out of 2400000 90-bit inputs: 4.85%
+elapsed time: 0.1301 sec, 0.0542 us / input
+total ticks = 1078267938, ticks per 91-bit input = 673
+found 76913 fermat-prp out of 1600000 91-bit inputs: 4.81%
+elapsed time: 0.1315 sec, 0.0822 us / input
+total ticks = 1089861631, ticks per 92-bit input = 681
+found 75550 fermat-prp out of 1600000 92-bit inputs: 4.72%
+elapsed time: 0.1329 sec, 0.0831 us / input
+total ticks = 1100667796, ticks per 93-bit input = 687
+found 74978 fermat-prp out of 1600000 93-bit inputs: 4.69%
+elapsed time: 0.1342 sec, 0.0839 us / input
+total ticks = 1115278023, ticks per 94-bit input = 697
+found 74216 fermat-prp out of 1600000 94-bit inputs: 4.64%
+elapsed time: 0.1360 sec, 0.0850 us / input
+total ticks = 1125871152, ticks per 95-bit input = 703
+found 73223 fermat-prp out of 1600000 95-bit inputs: 4.58%
+elapsed time: 0.1373 sec, 0.0858 us / input
+total ticks = 1139228337, ticks per 96-bit input = 712
+found 72914 fermat-prp out of 1600000 96-bit inputs: 4.56%
+elapsed time: 0.1389 sec, 0.0868 us / input
+total ticks = 1150261191, ticks per 97-bit input = 718
+found 71837 fermat-prp out of 1600000 97-bit inputs: 4.49%
+elapsed time: 0.1403 sec, 0.0877 us / input
+total ticks = 1163739408, ticks per 98-bit input = 727
+found 71086 fermat-prp out of 1600000 98-bit inputs: 4.44%
+elapsed time: 0.1418 sec, 0.0886 us / input
+total ticks = 1174039510, ticks per 99-bit input = 733
+found 70234 fermat-prp out of 1600000 99-bit inputs: 4.39%
+elapsed time: 0.1432 sec, 0.0895 us / input
+total ticks = 1190446316, ticks per 100-bit input = 744
+found 69508 fermat-prp out of 1600000 100-bit inputs: 4.34%
+elapsed time: 0.1452 sec, 0.0908 us / input
+total ticks = 1196667123, ticks per 101-bit input = 747
+found 68504 fermat-prp out of 1600000 101-bit inputs: 4.28%
+elapsed time: 0.1459 sec, 0.0912 us / input
+total ticks = 1646827320, ticks per 102-bit input = 1029
+found 67975 fermat-prp out of 1600000 102-bit inputs: 4.25%
+elapsed time: 0.2003 sec, 0.1252 us / input
+total ticks = 1657627335, ticks per 103-bit input = 1036
+found 67663 fermat-prp out of 1600000 103-bit inputs: 4.23%
+elapsed time: 0.2023 sec, 0.1265 us / input
+total ticks = 1505285931, ticks per 104-bit input = 940
+found 66906 fermat-prp out of 1600000 104-bit inputs: 4.18%
+elapsed time: 0.1843 sec, 0.1152 us / input
+
+total ticks = 1138620963, ticks per 20-bit input = 71
+found 3305689 MR-2sprp out of 16000000 20-bit inputs: 20.66%
+elapsed time: 0.2777 sec, 0.0174 us / input
+total ticks = 1176130141, ticks per 21-bit input = 73
+found 3221445 MR-2sprp out of 16000000 21-bit inputs: 20.13%
+elapsed time: 0.2869 sec, 0.0179 us / input
+total ticks = 1217243301, ticks per 22-bit input = 76
+found 3155120 MR-2sprp out of 16000000 22-bit inputs: 19.72%
+elapsed time: 0.2969 sec, 0.0186 us / input
+total ticks = 1270572944, ticks per 23-bit input = 79
+found 3025112 MR-2sprp out of 16000000 23-bit inputs: 18.91%
+elapsed time: 0.3099 sec, 0.0194 us / input
+total ticks = 1323695332, ticks per 24-bit input = 82
+found 2909600 MR-2sprp out of 16000000 24-bit inputs: 18.18%
+elapsed time: 0.3229 sec, 0.0202 us / input
+total ticks = 1386031691, ticks per 25-bit input = 86
+found 2804937 MR-2sprp out of 16000000 25-bit inputs: 17.53%
+elapsed time: 0.3381 sec, 0.0211 us / input
+total ticks = 1417474017, ticks per 26-bit input = 88
+found 2698622 MR-2sprp out of 16000000 26-bit inputs: 16.87%
+elapsed time: 0.3457 sec, 0.0216 us / input
+total ticks = 1465674683, ticks per 27-bit input = 91
+found 2602716 MR-2sprp out of 16000000 27-bit inputs: 16.27%
+elapsed time: 0.3575 sec, 0.0223 us / input
+total ticks = 1519002276, ticks per 28-bit input = 94
+found 2517861 MR-2sprp out of 16000000 28-bit inputs: 15.74%
+elapsed time: 0.3705 sec, 0.0232 us / input
+total ticks = 1590716524, ticks per 29-bit input = 99
+found 2424317 MR-2sprp out of 16000000 29-bit inputs: 15.15%
+elapsed time: 0.3880 sec, 0.0242 us / input
+total ticks = 1644859443, ticks per 30-bit input = 102
+found 2350145 MR-2sprp out of 16000000 30-bit inputs: 14.69%
+elapsed time: 0.4012 sec, 0.0251 us / input
+total ticks = 1698489780, ticks per 31-bit input = 106
+found 2269375 MR-2sprp out of 16000000 31-bit inputs: 14.18%
+elapsed time: 0.4143 sec, 0.0259 us / input
+total ticks = 1768091626, ticks per 32-bit input = 110
+found 2205322 MR-2sprp out of 16000000 32-bit inputs: 13.78%
+elapsed time: 0.4312 sec, 0.0270 us / input
+total ticks = 1814808010, ticks per 33-bit input = 113
+found 2138500 MR-2sprp out of 16000000 33-bit inputs: 13.37%
+elapsed time: 0.4426 sec, 0.0277 us / input
+total ticks = 1886693515, ticks per 34-bit input = 117
+found 2061839 MR-2sprp out of 16000000 34-bit inputs: 12.89%
+elapsed time: 0.4602 sec, 0.0288 us / input
+total ticks = 1942143924, ticks per 35-bit input = 121
+found 2000942 MR-2sprp out of 16000000 35-bit inputs: 12.51%
+elapsed time: 0.4737 sec, 0.0296 us / input
+total ticks = 2004160688, ticks per 36-bit input = 125
+found 1952941 MR-2sprp out of 16000000 36-bit inputs: 12.21%
+elapsed time: 0.4888 sec, 0.0306 us / input
+total ticks = 2065535761, ticks per 37-bit input = 129
+found 1890712 MR-2sprp out of 16000000 37-bit inputs: 11.82%
+elapsed time: 0.5038 sec, 0.0315 us / input
+total ticks = 2123116120, ticks per 38-bit input = 132
+found 1845814 MR-2sprp out of 16000000 38-bit inputs: 11.54%
+elapsed time: 0.5178 sec, 0.0324 us / input
+total ticks = 1091140831, ticks per 39-bit input = 136
+found 896225 MR-2sprp out of 8000000 39-bit inputs: 11.20%
+elapsed time: 0.2661 sec, 0.0333 us / input
+total ticks = 1121477633, ticks per 40-bit input = 140
+found 876465 MR-2sprp out of 8000000 40-bit inputs: 10.96%
+elapsed time: 0.2735 sec, 0.0342 us / input
+total ticks = 1154448316, ticks per 41-bit input = 144
+found 855201 MR-2sprp out of 8000000 41-bit inputs: 10.69%
+elapsed time: 0.2816 sec, 0.0352 us / input
+total ticks = 1185044771, ticks per 42-bit input = 148
+found 835004 MR-2sprp out of 8000000 42-bit inputs: 10.44%
+elapsed time: 0.2890 sec, 0.0361 us / input
+total ticks = 1214095239, ticks per 43-bit input = 151
+found 812527 MR-2sprp out of 8000000 43-bit inputs: 10.16%
+elapsed time: 0.2961 sec, 0.0370 us / input
+total ticks = 1239672925, ticks per 44-bit input = 154
+found 795209 MR-2sprp out of 8000000 44-bit inputs: 9.94%
+elapsed time: 0.3024 sec, 0.0378 us / input
+total ticks = 1272616343, ticks per 45-bit input = 159
+found 780477 MR-2sprp out of 8000000 45-bit inputs: 9.76%
+elapsed time: 0.3104 sec, 0.0388 us / input
+total ticks = 1304854766, ticks per 46-bit input = 163
+found 758187 MR-2sprp out of 8000000 46-bit inputs: 9.48%
+elapsed time: 0.3183 sec, 0.0398 us / input
+total ticks = 1337387733, ticks per 47-bit input = 167
+found 741505 MR-2sprp out of 8000000 47-bit inputs: 9.27%
+elapsed time: 0.3262 sec, 0.0408 us / input
+total ticks = 1366359030, ticks per 48-bit input = 170
+found 728238 MR-2sprp out of 8000000 48-bit inputs: 9.10%
+elapsed time: 0.3333 sec, 0.0417 us / input
+total ticks = 1401494021, ticks per 49-bit input = 175
+found 714521 MR-2sprp out of 8000000 49-bit inputs: 8.93%
+elapsed time: 0.3418 sec, 0.0427 us / input
+total ticks = 1424926423, ticks per 50-bit input = 178
+found 700550 MR-2sprp out of 8000000 50-bit inputs: 8.76%
+elapsed time: 0.3475 sec, 0.0434 us / input
+total ticks = 1458016990, ticks per 51-bit input = 182
+found 684911 MR-2sprp out of 8000000 51-bit inputs: 8.56%
+elapsed time: 0.3556 sec, 0.0445 us / input
+total ticks = 1483912631, ticks per 52-bit input = 185
+found 671088 MR-2sprp out of 8000000 52-bit inputs: 8.39%
+elapsed time: 0.3619 sec, 0.0452 us / input
+
+total ticks = 1258370483, ticks per 50-bit input = 393
+found 279478 MR-2sprp out of 3200000 50-bit inputs: 8.73%
+elapsed time: 0.0767 sec, 0.0240 us / input
+total ticks = 1288974933, ticks per 51-bit input = 402
+found 273606 MR-2sprp out of 3200000 51-bit inputs: 8.55%
+elapsed time: 0.0783 sec, 0.0245 us / input
+total ticks = 1315153064, ticks per 52-bit input = 410
+found 268831 MR-2sprp out of 3200000 52-bit inputs: 8.40%
+elapsed time: 0.0804 sec, 0.0251 us / input
+total ticks = 1339174267, ticks per 53-bit input = 418
+found 263149 MR-2sprp out of 3200000 53-bit inputs: 8.22%
+elapsed time: 0.0812 sec, 0.0254 us / input
+total ticks = 1358018974, ticks per 54-bit input = 424
+found 259434 MR-2sprp out of 3200000 54-bit inputs: 8.11%
+elapsed time: 0.0823 sec, 0.0257 us / input
+total ticks = 1382699252, ticks per 55-bit input = 432
+found 253183 MR-2sprp out of 3200000 55-bit inputs: 7.91%
+elapsed time: 0.0841 sec, 0.0263 us / input
+total ticks = 1399997808, ticks per 56-bit input = 437
+found 248697 MR-2sprp out of 3200000 56-bit inputs: 7.77%
+elapsed time: 0.0857 sec, 0.0268 us / input
+total ticks = 1430908815, ticks per 57-bit input = 447
+found 244300 MR-2sprp out of 3200000 57-bit inputs: 7.63%
+elapsed time: 0.0873 sec, 0.0273 us / input
+total ticks = 1085262005, ticks per 58-bit input = 452
+found 181269 MR-2sprp out of 2400000 58-bit inputs: 7.55%
+elapsed time: 0.0887 sec, 0.0369 us / input
+total ticks = 1106658183, ticks per 59-bit input = 461
+found 177496 MR-2sprp out of 2400000 59-bit inputs: 7.40%
+elapsed time: 0.0897 sec, 0.0374 us / input
+total ticks = 1121830356, ticks per 60-bit input = 467
+found 175012 MR-2sprp out of 2400000 60-bit inputs: 7.29%
+elapsed time: 0.0908 sec, 0.0379 us / input
+total ticks = 1134681478, ticks per 61-bit input = 472
+found 171925 MR-2sprp out of 2400000 61-bit inputs: 7.16%
+elapsed time: 0.0926 sec, 0.0386 us / input
+total ticks = 1164015420, ticks per 62-bit input = 485
+found 168932 MR-2sprp out of 2400000 62-bit inputs: 7.04%
+elapsed time: 0.0945 sec, 0.0394 us / input
+total ticks = 1178472307, ticks per 63-bit input = 491
+found 165958 MR-2sprp out of 2400000 63-bit inputs: 6.91%
+elapsed time: 0.0954 sec, 0.0397 us / input
+total ticks = 1188137319, ticks per 64-bit input = 495
+found 163125 MR-2sprp out of 2400000 64-bit inputs: 6.80%
+elapsed time: 0.0969 sec, 0.0404 us / input
+total ticks = 1241493940, ticks per 65-bit input = 517
+found 160883 MR-2sprp out of 2400000 65-bit inputs: 6.70%
+elapsed time: 0.1009 sec, 0.0420 us / input
+total ticks = 1259987359, ticks per 66-bit input = 524
+found 157876 MR-2sprp out of 2400000 66-bit inputs: 6.58%
+elapsed time: 0.1023 sec, 0.0426 us / input
+total ticks = 1277739785, ticks per 67-bit input = 532
+found 155724 MR-2sprp out of 2400000 67-bit inputs: 6.49%
+elapsed time: 0.1035 sec, 0.0431 us / input
+total ticks = 1293012859, ticks per 68-bit input = 538
+found 153967 MR-2sprp out of 2400000 68-bit inputs: 6.42%
+elapsed time: 0.1053 sec, 0.0439 us / input
+total ticks = 1307106486, ticks per 69-bit input = 544
+found 151486 MR-2sprp out of 2400000 69-bit inputs: 6.31%
+elapsed time: 0.1065 sec, 0.0444 us / input
+total ticks = 1324170727, ticks per 70-bit input = 551
+found 149417 MR-2sprp out of 2400000 70-bit inputs: 6.23%
+elapsed time: 0.1076 sec, 0.0448 us / input
+total ticks = 1341364323, ticks per 71-bit input = 558
+found 147940 MR-2sprp out of 2400000 71-bit inputs: 6.16%
+elapsed time: 0.1089 sec, 0.0454 us / input
+total ticks = 1361778838, ticks per 72-bit input = 567
+found 144897 MR-2sprp out of 2400000 72-bit inputs: 6.04%
+elapsed time: 0.1106 sec, 0.0461 us / input
+total ticks = 1373638990, ticks per 73-bit input = 572
+found 143209 MR-2sprp out of 2400000 73-bit inputs: 5.97%
+elapsed time: 0.1119 sec, 0.0466 us / input
+total ticks = 1385391640, ticks per 74-bit input = 577
+found 141274 MR-2sprp out of 2400000 74-bit inputs: 5.89%
+elapsed time: 0.1135 sec, 0.0473 us / input
+total ticks = 1409616449, ticks per 75-bit input = 587
+found 139150 MR-2sprp out of 2400000 75-bit inputs: 5.80%
+elapsed time: 0.1141 sec, 0.0476 us / input
+total ticks = 1432059480, ticks per 76-bit input = 596
+found 137422 MR-2sprp out of 2400000 76-bit inputs: 5.73%
+elapsed time: 0.1167 sec, 0.0486 us / input
+total ticks = 1444017499, ticks per 77-bit input = 601
+found 135879 MR-2sprp out of 2400000 77-bit inputs: 5.66%
+elapsed time: 0.1179 sec, 0.0491 us / input
+total ticks = 1466568565, ticks per 78-bit input = 611
+found 133427 MR-2sprp out of 2400000 78-bit inputs: 5.56%
+elapsed time: 0.1196 sec, 0.0499 us / input
+total ticks = 1477320405, ticks per 79-bit input = 615
+found 132365 MR-2sprp out of 2400000 79-bit inputs: 5.52%
+elapsed time: 0.1193 sec, 0.0497 us / input
+total ticks = 1496102505, ticks per 80-bit input = 623
+found 130538 MR-2sprp out of 2400000 80-bit inputs: 5.44%
+elapsed time: 0.1221 sec, 0.0509 us / input
+total ticks = 1516216203, ticks per 81-bit input = 631
+found 128931 MR-2sprp out of 2400000 81-bit inputs: 5.37%
+elapsed time: 0.1229 sec, 0.0512 us / input
+total ticks = 1520887046, ticks per 82-bit input = 633
+found 127727 MR-2sprp out of 2400000 82-bit inputs: 5.32%
+elapsed time: 0.1233 sec, 0.0514 us / input
+total ticks = 1549059827, ticks per 83-bit input = 645
+found 125844 MR-2sprp out of 2400000 83-bit inputs: 5.24%
+elapsed time: 0.1260 sec, 0.0525 us / input
+total ticks = 1558279456, ticks per 84-bit input = 649
+found 124213 MR-2sprp out of 2400000 84-bit inputs: 5.18%
+elapsed time: 0.1265 sec, 0.0527 us / input
+total ticks = 1578802949, ticks per 85-bit input = 657
+found 122761 MR-2sprp out of 2400000 85-bit inputs: 5.12%
+elapsed time: 0.1288 sec, 0.0536 us / input
+total ticks = 1596996494, ticks per 86-bit input = 665
+found 121681 MR-2sprp out of 2400000 86-bit inputs: 5.07%
+elapsed time: 0.1307 sec, 0.0545 us / input
+total ticks = 1082669862, ticks per 87-bit input = 676
+found 79686 MR-2sprp out of 1600000 87-bit inputs: 4.98%
+elapsed time: 0.1322 sec, 0.0826 us / input
+total ticks = 1096775789, ticks per 88-bit input = 685
+found 78658 MR-2sprp out of 1600000 88-bit inputs: 4.92%
+elapsed time: 0.1339 sec, 0.0837 us / input
+total ticks = 1104062678, ticks per 89-bit input = 690
+found 78510 MR-2sprp out of 1600000 89-bit inputs: 4.91%
+elapsed time: 0.1351 sec, 0.0844 us / input
+total ticks = 1115231652, ticks per 90-bit input = 697
+found 77662 MR-2sprp out of 1600000 90-bit inputs: 4.85%
+elapsed time: 0.1365 sec, 0.0853 us / input
+total ticks = 1126858965, ticks per 91-bit input = 704
+found 76421 MR-2sprp out of 1600000 91-bit inputs: 4.78%
+elapsed time: 0.1372 sec, 0.0857 us / input
+total ticks = 1141818799, ticks per 92-bit input = 713
+found 75573 MR-2sprp out of 1600000 92-bit inputs: 4.72%
+elapsed time: 0.1392 sec, 0.0870 us / input
+total ticks = 1152352724, ticks per 93-bit input = 720
+found 74813 MR-2sprp out of 1600000 93-bit inputs: 4.68%
+elapsed time: 0.1407 sec, 0.0879 us / input
+total ticks = 1159941988, ticks per 94-bit input = 724
+found 74081 MR-2sprp out of 1600000 94-bit inputs: 4.63%
+elapsed time: 0.1421 sec, 0.0888 us / input
+total ticks = 1176488235, ticks per 95-bit input = 735
+found 73033 MR-2sprp out of 1600000 95-bit inputs: 4.56%
+elapsed time: 0.1434 sec, 0.0896 us / input
+total ticks = 1181462560, ticks per 96-bit input = 738
+found 72630 MR-2sprp out of 1600000 96-bit inputs: 4.54%
+elapsed time: 0.1445 sec, 0.0903 us / input
+total ticks = 1199691447, ticks per 97-bit input = 749
+found 71611 MR-2sprp out of 1600000 97-bit inputs: 4.48%
+elapsed time: 0.1462 sec, 0.0914 us / input
+total ticks = 1206779568, ticks per 98-bit input = 754
+found 70963 MR-2sprp out of 1600000 98-bit inputs: 4.44%
+elapsed time: 0.1476 sec, 0.0922 us / input
+total ticks = 1222147762, ticks per 99-bit input = 763
+found 70011 MR-2sprp out of 1600000 99-bit inputs: 4.38%
+elapsed time: 0.1490 sec, 0.0931 us / input
+total ticks = 1233834279, ticks per 100-bit input = 771
+found 69574 MR-2sprp out of 1600000 100-bit inputs: 4.35%
+elapsed time: 0.1501 sec, 0.0938 us / input
+total ticks = 1248369066, ticks per 101-bit input = 780
+found 68975 MR-2sprp out of 1600000 101-bit inputs: 4.31%
+elapsed time: 0.1521 sec, 0.0951 us / input
+total ticks = 1702423566, ticks per 102-bit input = 1064
+found 67944 MR-2sprp out of 1600000 102-bit inputs: 4.25%
+elapsed time: 0.2082 sec, 0.1301 us / input
+total ticks = 1731008438, ticks per 103-bit input = 1081
+found 67433 MR-2sprp out of 1600000 103-bit inputs: 4.21%
+elapsed time: 0.2118 sec, 0.1324 us / input
+total ticks = 1572940523, ticks per 104-bit input = 983
+found 67205 MR-2sprp out of 1600000 104-bit inputs: 4.20%
+elapsed time: 0.1897 sec, 0.1185 us / input
+
+total ticks = 1073742727, ticks per 50-bit input = 4425
+found 242648 MR-sprp out of 242648 50-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.0793 us / input
+total ticks = 1073744572, ticks per 51-bit input = 4744
+found 226296 MR-sprp out of 226296 51-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.1573 us / input
+total ticks = 1073742604, ticks per 52-bit input = 4825
+found 222528 MR-sprp out of 222528 52-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.1769 us / input
+total ticks = 1073743219, ticks per 53-bit input = 4931
+found 217720 MR-sprp out of 217720 53-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.2029 us / input
+total ticks = 1073743875, ticks per 54-bit input = 4757
+found 225696 MR-sprp out of 225696 54-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.1604 us / input
+total ticks = 1073743793, ticks per 55-bit input = 4766
+found 225264 MR-sprp out of 225264 55-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.1626 us / input
+total ticks = 1073745433, ticks per 56-bit input = 5133
+found 209168 MR-sprp out of 209168 56-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.2521 us / input
+total ticks = 1073745105, ticks per 57-bit input = 5506
+found 194992 MR-sprp out of 194992 57-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.3431 us / input
+total ticks = 1073743014, ticks per 58-bit input = 5510
+found 194848 MR-sprp out of 194848 58-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.3441 us / input
+total ticks = 1073742317, ticks per 59-bit input = 5109
+found 210144 MR-sprp out of 210144 59-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.2463 us / input
+total ticks = 1073745433, ticks per 60-bit input = 5431
+found 197680 MR-sprp out of 197680 60-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.3248 us / input
+total ticks = 1073746335, ticks per 61-bit input = 5340
+found 201056 MR-sprp out of 201056 61-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.3026 us / input
+total ticks = 1073746417, ticks per 62-bit input = 5599
+found 191768 MR-sprp out of 191768 62-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.3657 us / input
+total ticks = 1073746253, ticks per 63-bit input = 10445
+found 102800 MR-sprp out of 102800 63-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.5476 us / input
+total ticks = 1073743096, ticks per 64-bit input = 10462
+found 102632 MR-sprp out of 102632 64-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.5518 us / input
+total ticks = 1073742358, ticks per 65-bit input = 11077
+found 96928 MR-sprp out of 96928 65-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.7019 us / input
+total ticks = 1073744982, ticks per 66-bit input = 11210
+found 95784 MR-sprp out of 95784 66-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.7342 us / input
+total ticks = 1073744039, ticks per 67-bit input = 11195
+found 95912 MR-sprp out of 95912 67-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.7306 us / input
+total ticks = 1073744982, ticks per 68-bit input = 11236
+found 95560 MR-sprp out of 95560 68-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.7406 us / input
+total ticks = 1073746499, ticks per 69-bit input = 11707
+found 91712 MR-sprp out of 91712 69-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.8556 us / input
+total ticks = 1073742809, ticks per 70-bit input = 12183
+found 88128 MR-sprp out of 88128 70-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.9717 us / input
+total ticks = 1073743957, ticks per 71-bit input = 12348
+found 86952 MR-sprp out of 86952 71-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.0119 us / input
+total ticks = 1073747237, ticks per 72-bit input = 12154
+found 88344 MR-sprp out of 88344 72-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.9645 us / input
+total ticks = 1073744654, ticks per 73-bit input = 12158
+found 88312 MR-sprp out of 88312 73-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.9655 us / input
+total ticks = 1073744695, ticks per 74-bit input = 12513
+found 85808 MR-sprp out of 85808 74-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.0521 us / input
+total ticks = 1073743465, ticks per 75-bit input = 12971
+found 82776 MR-sprp out of 82776 75-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.1639 us / input
+total ticks = 1073747401, ticks per 76-bit input = 12639
+found 84952 MR-sprp out of 84952 76-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.0828 us / input
+total ticks = 1073746048, ticks per 77-bit input = 12831
+found 83680 MR-sprp out of 83680 77-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.1297 us / input
+total ticks = 1073743424, ticks per 78-bit input = 12946
+found 82936 MR-sprp out of 82936 78-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.1578 us / input
+total ticks = 1073747729, ticks per 79-bit input = 13718
+found 78272 MR-sprp out of 78272 79-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.3459 us / input
+total ticks = 1073747032, ticks per 80-bit input = 13938
+found 77032 MR-sprp out of 77032 80-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.3998 us / input
+total ticks = 1073745392, ticks per 81-bit input = 13412
+found 80056 MR-sprp out of 80056 81-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.2714 us / input
+total ticks = 1073744490, ticks per 82-bit input = 15016
+found 71504 MR-sprp out of 71504 82-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.6626 us / input
+total ticks = 1073747442, ticks per 83-bit input = 13756
+found 78056 MR-sprp out of 78056 83-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.3552 us / input
+total ticks = 1073744695, ticks per 84-bit input = 14381
+found 74664 MR-sprp out of 74664 84-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.5076 us / input
+total ticks = 1073744613, ticks per 85-bit input = 14379
+found 74672 MR-sprp out of 74672 85-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.5072 us / input
+total ticks = 1073743588, ticks per 86-bit input = 14239
+found 75408 MR-sprp out of 75408 86-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.4730 us / input
+total ticks = 1073743875, ticks per 87-bit input = 14749
+found 72800 MR-sprp out of 72800 87-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.5974 us / input
+total ticks = 1073745392, ticks per 88-bit input = 14530
+found 73896 MR-sprp out of 73896 88-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.5441 us / input
+total ticks = 1073742932, ticks per 89-bit input = 14870
+found 72208 MR-sprp out of 72208 89-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.6269 us / input
+total ticks = 1073743547, ticks per 90-bit input = 14866
+found 72224 MR-sprp out of 72224 90-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.6261 us / input
+total ticks = 1073746581, ticks per 91-bit input = 15461
+found 69448 MR-sprp out of 69448 91-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.7711 us / input
+total ticks = 1073742604, ticks per 92-bit input = 15325
+found 70064 MR-sprp out of 70064 92-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.7379 us / input
+total ticks = 1073743465, ticks per 93-bit input = 15459
+found 69456 MR-sprp out of 69456 93-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.7706 us / input
+total ticks = 1073748344, ticks per 94-bit input = 15330
+found 70040 MR-sprp out of 70040 94-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.7392 us / input
+total ticks = 1073742071, ticks per 95-bit input = 16108
+found 66656 MR-sprp out of 66656 95-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.9290 us / input
+total ticks = 1073743998, ticks per 96-bit input = 16110
+found 66648 MR-sprp out of 66648 96-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.9295 us / input
+total ticks = 1073746622, ticks per 97-bit input = 16122
+found 66600 MR-sprp out of 66600 97-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.9323 us / input
+total ticks = 1073748262, ticks per 98-bit input = 16126
+found 66584 MR-sprp out of 66584 98-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.9333 us / input
+total ticks = 1073746663, ticks per 99-bit input = 16594
+found 64704 MR-sprp out of 64704 99-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 4.0476 us / input
+total ticks = 1073742932, ticks per 100-bit input = 16440
+found 65312 MR-sprp out of 65312 100-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 4.0099 us / input
+total ticks = 1073745105, ticks per 101-bit input = 17034
+found 63032 MR-sprp out of 63032 101-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 4.1549 us / input
+total ticks = 1073746212, ticks per 102-bit input = 17211
+found 62384 MR-sprp out of 62384 102-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 4.1981 us / input
+total ticks = 1073742399, ticks per 103-bit input = 17082
+found 62856 MR-sprp out of 62856 103-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 4.1665 us / input
+total ticks = 1073742932, ticks per 104-bit input = 19381
+found 55400 MR-sprp out of 55400 104-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 4.7273 us / input
+
+total ticks = 1073741989, ticks per 50-bit input = 4607
+found 233033 MR-sprp out of 233033 50-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.1238 us / input
+total ticks = 1073742563, ticks per 51-bit input = 4690
+found 228921 MR-sprp out of 228921 51-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.1440 us / input
+total ticks = 1073742768, ticks per 52-bit input = 4761
+found 225510 MR-sprp out of 225510 52-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.1613 us / input
+total ticks = 1073743711, ticks per 53-bit input = 4842
+found 221719 MR-sprp out of 221719 53-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.1812 us / input
+total ticks = 1073741825, ticks per 54-bit input = 4891
+found 219494 MR-sprp out of 219494 54-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.1932 us / input
+total ticks = 1073743834, ticks per 55-bit input = 5091
+found 210906 MR-sprp out of 210906 55-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.2417 us / input
+total ticks = 1073742808, ticks per 56-bit input = 5206
+found 206243 MR-sprp out of 206243 56-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.2698 us / input
+total ticks = 1073743547, ticks per 57-bit input = 5112
+found 210035 MR-sprp out of 210035 57-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.2469 us / input
+total ticks = 1073741989, ticks per 58-bit input = 5299
+found 202604 MR-sprp out of 202604 58-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.2926 us / input
+total ticks = 1073742481, ticks per 59-bit input = 5355
+found 200492 MR-sprp out of 200492 59-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.3062 us / input
+total ticks = 1073742973, ticks per 60-bit input = 5401
+found 198789 MR-sprp out of 198789 60-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.3174 us / input
+total ticks = 1073744244, ticks per 61-bit input = 5603
+found 191613 MR-sprp out of 191613 61-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.3668 us / input
+total ticks = 1073742234, ticks per 62-bit input = 5607
+found 191491 MR-sprp out of 191491 62-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 1.3676 us / input
+total ticks = 1073743506, ticks per 63-bit input = 8432
+found 127335 MR-sprp out of 127335 63-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.0567 us / input
+total ticks = 1073742972, ticks per 64-bit input = 8554
+found 125512 MR-sprp out of 125512 64-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.0866 us / input
+total ticks = 1073742563, ticks per 65-bit input = 8859
+found 121202 MR-sprp out of 121202 65-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.1608 us / input
+total ticks = 1073744080, ticks per 66-bit input = 8903
+found 120600 MR-sprp out of 120600 66-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.1716 us / input
+total ticks = 1073742275, ticks per 67-bit input = 9095
+found 118055 MR-sprp out of 118055 67-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.2184 us / input
+total ticks = 1073744367, ticks per 68-bit input = 9236
+found 116247 MR-sprp out of 116247 68-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.2529 us / input
+total ticks = 1073742727, ticks per 69-bit input = 9349
+found 114849 MR-sprp out of 114849 69-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.2803 us / input
+total ticks = 1073741989, ticks per 70-bit input = 9423
+found 113949 MR-sprp out of 113949 70-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.2983 us / input
+total ticks = 1073742399, ticks per 71-bit input = 9431
+found 113850 MR-sprp out of 113850 71-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.3003 us / input
+total ticks = 1073742768, ticks per 72-bit input = 9539
+found 112558 MR-sprp out of 112558 72-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.3267 us / input
+total ticks = 1073744448, ticks per 73-bit input = 9795
+found 109617 MR-sprp out of 109617 73-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.3892 us / input
+total ticks = 1073744736, ticks per 74-bit input = 9739
+found 110241 MR-sprp out of 110241 74-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.3756 us / input
+total ticks = 1073742194, ticks per 75-bit input = 9815
+found 109389 MR-sprp out of 109389 75-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.3941 us / input
+total ticks = 1073743998, ticks per 76-bit input = 10352
+found 103717 MR-sprp out of 103717 76-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.5251 us / input
+total ticks = 1073753715, ticks per 77-bit input = 10266
+found 104586 MR-sprp out of 104586 77-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.5041 us / input
+total ticks = 1073742276, ticks per 78-bit input = 10412
+found 103119 MR-sprp out of 103119 78-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.5397 us / input
+total ticks = 1073742767, ticks per 79-bit input = 10292
+found 104320 MR-sprp out of 104320 79-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.5105 us / input
+total ticks = 1073743588, ticks per 80-bit input = 10725
+found 100112 MR-sprp out of 100112 80-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.6160 us / input
+total ticks = 1073743547, ticks per 81-bit input = 10657
+found 100754 MR-sprp out of 100754 81-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.5993 us / input
+total ticks = 1073741824, ticks per 82-bit input = 10757
+found 99816 MR-sprp out of 99816 82-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.6237 us / input
+total ticks = 1073742973, ticks per 83-bit input = 11065
+found 97033 MR-sprp out of 97033 83-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.6990 us / input
+total ticks = 1073741866, ticks per 84-bit input = 11133
+found 96442 MR-sprp out of 96442 84-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.7155 us / input
+total ticks = 1073743793, ticks per 85-bit input = 11167
+found 96153 MR-sprp out of 96153 85-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.7237 us / input
+total ticks = 1073744080, ticks per 86-bit input = 11504
+found 93332 MR-sprp out of 93332 86-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.8060 us / input
+total ticks = 1073744039, ticks per 87-bit input = 11376
+found 94383 MR-sprp out of 94383 87-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.7748 us / input
+total ticks = 1073742522, ticks per 88-bit input = 11579
+found 92724 MR-sprp out of 92724 88-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.8244 us / input
+total ticks = 1073741989, ticks per 89-bit input = 11712
+found 91676 MR-sprp out of 91676 89-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.8567 us / input
+total ticks = 1073742071, ticks per 90-bit input = 12014
+found 89367 MR-sprp out of 89367 90-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.9305 us / input
+total ticks = 1073744162, ticks per 91-bit input = 12143
+found 88420 MR-sprp out of 88420 91-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.9619 us / input
+total ticks = 1073742850, ticks per 92-bit input = 12095
+found 88769 MR-sprp out of 88769 92-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.9503 us / input
+total ticks = 1073742439, ticks per 93-bit input = 12261
+found 87570 MR-sprp out of 87570 93-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 2.9907 us / input
+total ticks = 1073745597, ticks per 94-bit input = 12389
+found 86669 MR-sprp out of 86669 94-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.0218 us / input
+total ticks = 1073743587, ticks per 95-bit input = 12445
+found 86276 MR-sprp out of 86276 95-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.0355 us / input
+total ticks = 1073744326, ticks per 96-bit input = 12533
+found 85672 MR-sprp out of 85672 96-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.0569 us / input
+total ticks = 1073744121, ticks per 97-bit input = 12675
+found 84711 MR-sprp out of 84711 97-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.0916 us / input
+total ticks = 1073743054, ticks per 98-bit input = 12782
+found 83998 MR-sprp out of 83998 98-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.1178 us / input
+total ticks = 1073743424, ticks per 99-bit input = 12870
+found 83429 MR-sprp out of 83429 99-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.1391 us / input
+total ticks = 1073743260, ticks per 100-bit input = 12981
+found 82713 MR-sprp out of 82713 100-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.1663 us / input
+total ticks = 1073743178, ticks per 101-bit input = 13134
+found 81752 MR-sprp out of 81752 101-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.2035 us / input
+total ticks = 1073745966, ticks per 102-bit input = 13400
+found 80125 MR-sprp out of 80125 102-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.2686 us / input
+total ticks = 1073743424, ticks per 103-bit input = 14309
+found 75038 MR-sprp out of 75038 103-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.4901 us / input
+total ticks = 1073744777, ticks per 104-bit input = 16172
+found 66392 MR-sprp out of 66392 104-bit inputs: 100.00%
+elapsed time: 0.2619 sec, 3.9446 us / input
+

@@ -47,7 +47,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>	//for gettimeofday using gcc
+#ifdef GMP_CHECK
 #include "gmp.h"
+#endif
 
 typedef __uint128_t uint128_t;
 
@@ -349,35 +351,35 @@ double _difftime(struct timeval* start, struct timeval* end)
 	hi = _mm512_add_epi64(hi, carry);		\
 	lo = _mm512_and_epi64(mask, lo); }
 
-__m512i _mm512_addsetc_epi52(__m512i a, __m512i b, __mmask8* cout)
+__m512i __inline _mm512_addsetc_epi52(__m512i a, __m512i b, __mmask8* cout)
 {
 	__m512i t = _mm512_add_epi64(a, b);
 	*cout = _mm512_cmpgt_epu64_mask(t, _mm512_set1_epi64(0xfffffffffffffULL));
 	t = _mm512_and_epi64(t, _mm512_set1_epi64(0xfffffffffffffULL));
 	return t;
 }
-__m512i _mm512_mask_addsetc_epi52(__m512i c, __mmask8 mask, __m512i a, __m512i b, __mmask8* cout)
+__m512i __inline _mm512_mask_addsetc_epi52(__m512i c, __mmask8 mask, __m512i a, __m512i b, __mmask8* cout)
 {
 	__m512i t = _mm512_add_epi64(a, b);
 	*cout = _mm512_mask_cmpgt_epu64_mask(mask, t, _mm512_set1_epi64(0xfffffffffffffULL));
 	t = _mm512_mask_and_epi64(c, mask, t, _mm512_set1_epi64(0xfffffffffffffULL));
 	return t;
 }
-__m512i _mm512_subsetc_epi52(__m512i a, __m512i b, __mmask8* cout)
+__m512i __inline _mm512_subsetc_epi52(__m512i a, __m512i b, __mmask8* cout)
 {
 	__m512i t = _mm512_sub_epi64(a, b);
 	*cout = _mm512_cmpgt_epu64_mask(b, a);
 	t = _mm512_and_epi64(t, _mm512_set1_epi64(0xfffffffffffffULL));
 	return t;
 }
-__m512i _mm512_mask_subsetc_epi52(__m512i c, __mmask8 mask, __m512i a, __m512i b, __mmask8* cout)
+__m512i __inline _mm512_mask_subsetc_epi52(__m512i c, __mmask8 mask, __m512i a, __m512i b, __mmask8* cout)
 {
 	__m512i t = _mm512_sub_epi64(a, b);
 	*cout = _mm512_mask_cmpgt_epu64_mask(mask, b, a);
 	t = _mm512_mask_and_epi64(c, mask, t, _mm512_set1_epi64(0xfffffffffffffULL));
 	return t;
 }
-__m512i _mm512_adc_epi52(__m512i a, __mmask8 c, __m512i b, __mmask8* cout)
+__m512i __inline _mm512_adc_epi52(__m512i a, __mmask8 c, __m512i b, __mmask8* cout)
 {
 	__m512i t = _mm512_add_epi64(a, b);
 	t = _mm512_add_epi64(t, _mm512_maskz_set1_epi64(c, 1));
@@ -385,7 +387,7 @@ __m512i _mm512_adc_epi52(__m512i a, __mmask8 c, __m512i b, __mmask8* cout)
 	t = _mm512_and_epi64(t, _mm512_set1_epi64(0xfffffffffffffULL));
 	return t;
 }
-__m512i _mm512_mask_adc_epi52(__m512i a, __mmask8 m, __mmask8 c, __m512i b, __mmask8* cout)
+__m512i __inline _mm512_mask_adc_epi52(__m512i a, __mmask8 m, __mmask8 c, __m512i b, __mmask8* cout)
 {
 	__m512i t = _mm512_add_epi64(a, b);
 	t = _mm512_mask_add_epi64(a, m, t, _mm512_maskz_set1_epi64(c, 1));
@@ -393,7 +395,7 @@ __m512i _mm512_mask_adc_epi52(__m512i a, __mmask8 m, __mmask8 c, __m512i b, __mm
 	t = _mm512_and_epi64(t, _mm512_set1_epi64(0xfffffffffffffULL));
 	return t;
 }
-__m512i _mm512_sbb_epi52(__m512i a, __mmask8 c, __m512i b, __mmask8* cout)
+__m512i __inline _mm512_sbb_epi52(__m512i a, __mmask8 c, __m512i b, __mmask8* cout)
 {
 	__m512i t = _mm512_sub_epi64(a, b);
 	*cout = _mm512_cmpgt_epu64_mask(b, a);
@@ -402,7 +404,7 @@ __m512i _mm512_sbb_epi52(__m512i a, __mmask8 c, __m512i b, __mmask8* cout)
 	t2 = _mm512_and_epi64(t2, _mm512_set1_epi64(0xfffffffffffffULL));
 	return t2;
 }
-__m512i _mm512_mask_sbb_epi52(__m512i a, __mmask8 m, __mmask8 c, __m512i b, __mmask8* cout)
+__m512i __inline _mm512_mask_sbb_epi52(__m512i a, __mmask8 m, __mmask8 c, __m512i b, __mmask8* cout)
 {
 	__m512i t = _mm512_mask_sub_epi64(a, m, a, b);
 	*cout = _mm512_mask_cmpgt_epu64_mask(m, b, a);
@@ -439,8 +441,9 @@ __inline static void mulredc52_mask_add_vec(__m512i* c0, __mmask8 addmsk, __m512
 
 	VEC_MUL_ACCUM_LOHI_PD(m, n0, t0, t1);
 
-	// adding m*n0 will generate exactly one carry from t0.
-	t0 = _mm512_add_epi64(t1, one);
+	// propagate t0's carry before we throw it away.
+	// it is almost always exactly 1, but not always, for example when m = 0;
+	t0 = _mm512_add_epi64(t1, _mm512_srli_epi64(t0, 52));
 
 	__mmask8 bmsk = _mm512_cmpge_epu64_mask(t0, n0);
 	t0 = _mm512_mask_sub_epi64(t0, bmsk, t0, n0);
@@ -453,9 +456,6 @@ __inline static void mulredc52_mask_add_vec(__m512i* c0, __mmask8 addmsk, __m512
 	
 	return;
 }
-
-//#define DEBUG_SQRMASKADD
-
 __inline static void mask_mulredc104_vec(__m512i* c1, __m512i* c0, __mmask8 mulmsk,
 	__m512i a1, __m512i a0, __m512i b1, __m512i b0, __m512i n1, __m512i n0, __m512i vrho)
 {
@@ -531,11 +531,6 @@ __inline static void mask_mulredc104_vec(__m512i* c1, __m512i* c0, __mmask8 mulm
 		t2 = _mm512_mask_sub_epi64(t2, scarry, t2, n1);
 		t2 = _mm512_mask_sub_epi64(t2, scarry, t2, C1);
 	}
-	
-	// conditionally subtract when needed.  we only check against overflow,
-	// so this is almost-montgomery multiplication
-	// *c0 = _mm512_mask_subsetc_epi52(t1, scarry2, t1, n0, &scarry);
-	// *c1 = _mm512_mask_sbb_epi52(t2, scarry2, scarry, n1, &scarry);
 
 	// on Zen4-epyc it is slower to do this:
 	// *c0 = _mm512_mask_and_epi64(a0, mulmsk, lo52mask, t1);
@@ -580,33 +575,11 @@ __inline static void sqrredc104_vec(__m512i* c1, __m512i* c0,
 	t2 = sqr_hi;
 	VEC_MUL_ACCUM_LOHI_PD(a0, a0, t0, t1);
 
-#ifdef DEBUG_SQRMASKADD
-	printvec("sqrlo", sqr_lo);
-	printvec("sqrhi", sqr_hi);
-#endif
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0 = lo^2 lo", t0);
-	printvec("t1 = lo^2 hi + sqrlo", t1);
-#endif
-
 	// m0
 	m = mul52lo(t0, vrho);
 
-#ifdef DEBUG_SQRMASKADD
-	printvec("m = t0 * rho", m);
-#endif
-
 	VEC_MUL_ACCUM_LOHI_PD(m, n0, t0, C1);
 	VEC_MUL_ACCUM_LOHI_PD(m, n1, t1, C2);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("m*n0 lo", t0);
-	printvec("m*n0 hi", C1);
-	printvec("m*n1 lo", t1);
-	printvec("m*n1 hi", C2);
-#endif
-
 
 	t1 = _mm512_add_epi64(t1, C1);
 	t2 = _mm512_add_epi64(t2, C2);
@@ -617,40 +590,16 @@ __inline static void sqrredc104_vec(__m512i* c1, __m512i* c0,
 	t1 = t2;
 	t2 = C1 = C2 = zero;
 
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0", t0);
-	printvec("t1", t1);
-#endif
-
-
 	VEC_MUL_ACCUM_LOHI_PD(a1, a1, t1, t2);
 
 	t0 = _mm512_add_epi64(t0, sqr_lo);
 	t1 = _mm512_add_epi64(t1, sqr_hi);
 
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0 = accum(a1*a1<<52+sqrterm)", t0);
-	printvec("t1 = accum(a1*a1<<52+sqrterm)", t1);
-	printvec("t2 = accum(a1*a1<<52+sqrterm)", t2);
-#endif
-
-
 	// m1
 	m = mul52lo(t0, vrho);
 
-#ifdef DEBUG_SQRMASKADD
-	printvec("m = t0 * rho", m);
-#endif
-
 	VEC_MUL_ACCUM_LOHI_PD(m, n0, t0, C1);
 	VEC_MUL_ACCUM_LOHI_PD(m, n1, t1, t2);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("m*n0 lo", t0);
-	printvec("m*n0 hi", C1);
-	printvec("m*n1 lo", t1);
-	printvec("m*n1 hi", C2);
-#endif
 
 	t1 = _mm512_add_epi64(t1, C1);
 
@@ -658,12 +607,6 @@ __inline static void sqrredc104_vec(__m512i* c1, __m512i* c0,
 	carryprop(t0, t1, lo52mask);
 	carryprop(t1, t2, lo52mask);
 	carryprop(t2, C2, lo52mask);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0 = after carryprop", t0);
-	printvec("t1 = after carryprop", t1);
-	printvec("t2 = after carryprop", t2);
-#endif
 
 	scarry = _mm512_cmp_epu64_mask(C2, zero, _MM_CMPINT_GT);
 
@@ -678,15 +621,96 @@ __inline static void sqrredc104_vec(__m512i* c1, __m512i* c0,
 	*c0 = _mm512_and_epi64(lo52mask, t1);
 	*c1 = _mm512_and_epi64(lo52mask, t2);
 
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0 = after modsub (overflow)", t1);
-	printvec("t1 = after modsub (overflow)", t2);
-#endif
-
 	return;
 }
 __inline static void mask_sqrredc104_vec(__m512i* c1, __m512i* c0, __mmask8 mulmsk,
+	__m512i a1, __m512i a0, __m512i n1, __m512i n0, __m512i vrho)
+{
+	// CIOS modular multiplication with normal (negative) single-word nhat
+	__m512i m;
+	__m512i t0, t1, t2, C3, C1, C2, sqr_lo, sqr_hi;
+
+#ifndef IFMA
+	__m512d prod1_hd, prod2_hd, prod3_hd, prod4_hd;                 // 23
+	__m512d prod1_ld, prod2_ld, prod3_ld, prod4_ld, prod5_ld;        // 28
+	__m512d dbias = _mm512_castsi512_pd(_mm512_set1_epi64(0x4670000000000000ULL));
+	__m512i vbias1 = _mm512_set1_epi64(0x4670000000000000ULL);  // 31
+	__m512i vbias2 = _mm512_set1_epi64(0x4670000000000001ULL);  // 31
+	__m512i vbias3 = _mm512_set1_epi64(0x4330000000000000ULL);  // 31
+	int biascount = 0;
+	__m512i i0, i1;
+#endif
+
+	__m512i zero = _mm512_set1_epi64(0);
+	__m512i one = _mm512_set1_epi64(1);
+	__m512i lo52mask = _mm512_set1_epi64(0x000fffffffffffffull);
+	__mmask8 scarry2;
+	__mmask8 scarry;
+
+	t0 = t1 = t2 = C1 = C2 = C3 = sqr_lo = sqr_hi = zero;
+
+	VEC_MUL_ACCUM_LOHI_PD(a1, a0, sqr_lo, sqr_hi);
+	VEC_MUL_ACCUM_LOHI_PD(a0, a0, t0, t1);
+
+	// m0
+	t1 += sqr_lo;
+	m = mul52lo(t0, vrho);
+
+	VEC_MUL_ACCUM_LOHI_PD(m, n0, t0, C1);
+	VEC_MUL_ACCUM_LOHI_PD(m, n1, t1, C2);
+
+	t1 = _mm512_add_epi64(t1, C1);
+	t2 = _mm512_add_epi64(sqr_hi, C2);
+	// we throw t0 away after this so first propagate its carry.
+	// t0 = _mm512_add_epi64(t1, one);
+	// t0 = _mm512_mask_add_epi64(t1, _mm512_cmpgt_epu64_mask(m, zero), t1, one);
+	t0 = _mm512_add_epi64(t1, _mm512_srli_epi64(t0, 52));
+	t1 = t2;
+	t2 = C1 = C2 = zero;
+
+	VEC_MUL_ACCUM_LOHI_PD(a1, a1, t1, t2);
+
+	t0 = _mm512_add_epi64(t0, sqr_lo);
+	t1 = _mm512_add_epi64(t1, sqr_hi);
+
+	// m1
+	m = mul52lo(t0, vrho);
+
+	VEC_MUL_ACCUM_LOHI_PD(m, n0, t0, C1);
+	VEC_MUL_ACCUM_LOHI_PD(m, n1, t1, t2);
+
+	t1 = _mm512_add_epi64(t1, C1);
+
+	// final carryprop
+	carryprop(t0, t1, lo52mask);
+	carryprop(t1, t2, lo52mask);
+
+	carryprop(t2, C2, lo52mask);
+	scarry = _mm512_cmp_epu64_mask(C2, zero, _MM_CMPINT_GT);
+
+	//scarry = _mm512_cmpge_epu64_mask(t2, n1);
+
+	if (scarry > 0) {
+		// conditionally subtract when needed (AMM - only on overflow)
+		C1 = _mm512_mask_set1_epi64(zero, _mm512_cmpgt_epi64_mask(n0, t1), 1);
+		t1 = _mm512_mask_sub_epi64(t1, scarry, t1, n0);
+		t2 = _mm512_mask_sub_epi64(t2, scarry, t2, n1);
+		t2 = _mm512_mask_sub_epi64(t2, scarry, t2, C1);
+	}
+
+	// on Zen4-epyc it is slower to do this:
+	// *c0 = _mm512_mask_and_epi64(a0, mulmsk, lo52mask, t1);
+	// *c1 = _mm512_mask_and_epi64(a1, mulmsk, lo52mask, t2);
+
+	// than this:
+	*c0 = _mm512_and_epi64(lo52mask, t1);
+	*c1 = _mm512_and_epi64(lo52mask, t2);
+	*c0 = _mm512_mask_mov_epi64(*c0, ~mulmsk, a0);
+	*c1 = _mm512_mask_mov_epi64(*c1, ~mulmsk, a1);
+
+	return;
+}
+__inline static void mask_sqrredc104_exact_vec(__m512i* c1, __m512i* c0, __mmask8 mulmsk,
 	__m512i a1, __m512i a0, __m512i n1, __m512i n0, __m512i vrho)
 {
 	// CIOS modular multiplication with normal (negative) single-word nhat
@@ -749,13 +773,14 @@ __inline static void mask_sqrredc104_vec(__m512i* c1, __m512i* c0, __mmask8 mulm
 	carryprop(t0, t1, lo52mask);
 	carryprop(t1, t2, lo52mask);
 
-	carryprop(t2, C2, lo52mask);
-	scarry = _mm512_cmp_epu64_mask(C2, zero, _MM_CMPINT_GT);
+	//carryprop(t2, C2, lo52mask);
+	//scarry = _mm512_cmp_epu64_mask(C2, zero, _MM_CMPINT_GT);
 
-	//scarry = _mm512_cmpge_epu64_mask(t2, n1);
+	scarry = _mm512_cmpge_epu64_mask(t2, n1);
+	//scarry |= (_mm512_cmpeq_epu64_mask(t2, n1) & _mm512_cmpgt_epu64_mask(t1, n0));
 
 	if (scarry > 0) {
-		// conditionally subtract when needed (AMM - only on overflow)
+		// conditionally subtract when result >= n
 		C1 = _mm512_mask_set1_epi64(zero, _mm512_cmpgt_epi64_mask(n0, t1), 1);
 		t1 = _mm512_mask_sub_epi64(t1, scarry, t1, n0);
 		t2 = _mm512_mask_sub_epi64(t2, scarry, t2, n1);
@@ -771,224 +796,6 @@ __inline static void mask_sqrredc104_vec(__m512i* c1, __m512i* c0, __mmask8 mulm
 	*c1 = _mm512_and_epi64(lo52mask, t2);
 	*c0 = _mm512_mask_mov_epi64(*c0, ~mulmsk, a0);
 	*c1 = _mm512_mask_mov_epi64(*c1, ~mulmsk, a1);
-
-	return;
-}
-__inline static void sqrredc_maskadd_vec(__m512i* a1, __m512i* a0, 
-	__mmask8 addmsk, __mmask8 protectmsk,
-	__m512i n1, __m512i n0, __m512i vrho)
-{
-	// CIOS modular multiplication with normal (negative) single-word nhat
-	__m512i m, t0, t1, t2, t3, C1, C2, sqr_lo, sqr_hi;
-
-#ifndef IFMA
-	__m512d prod1_hd;
-	__m512d prod1_ld, prod2_ld;
-#endif
-
-	__m512i zero = _mm512_set1_epi64(0);
-	__m512i one = _mm512_set1_epi64(1);
-	__m512i lo52mask = _mm512_set1_epi64(0x000fffffffffffffull);
-	__mmask8 scarry;
-
-	t0 = t3 = C1 = C2 = sqr_lo = sqr_hi = zero;
-
-	VEC_MUL_ACCUM_LOHI_PD(*a1, *a0, sqr_lo, sqr_hi);
-	t1 = sqr_lo;
-	t2 = sqr_hi;
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("sqrlo", sqr_lo);
-	printvec("sqrhi", sqr_hi);
-#endif
-	
-	VEC_MUL_ACCUM_LOHI_PD(*a0, *a0, t0, t1);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0 = lo^2 lo", t0);
-	printvec("t1 = lo^2 hi + sqrlo", t1);
-#endif
-	
-
-	// m0
-	//_mm512_mullo_epi52(m, vrho, t0);
-	m = mul52lo(t0, vrho);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("m = t0 * rho", m);
-#endif
-	
-
-	VEC_MUL_ACCUM_LOHI_PD(m, n0, t0, C1);
-	VEC_MUL_ACCUM_LOHI_PD(m, n1, t1, C2);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("m*n0 lo", t0);
-	printvec("m*n0 hi", C1);
-	printvec("m*n1 lo", t1);
-	printvec("m*n1 hi", C2);
-#endif
-	
-
-	t1 = _mm512_add_epi64(t1, C1);
-	t2 = _mm512_add_epi64(t2, C2);
-	// we throw t0 away after this so first propagate its carry.
-	t0 = _mm512_add_epi64(t1, one);
-	t1 = t2;
-	t2 = C1 = C2 = zero;
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0", t0);
-	printvec("t1", t1);
-#endif
-	
-
-	VEC_MUL_ACCUM_LOHI_PD(*a1, *a1, t1, t2);
-
-	t0 = _mm512_add_epi64(t0, sqr_lo);
-	t1 = _mm512_add_epi64(t1, sqr_hi);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0 = accum(a1*a1<<52+sqrterm)", t0);
-	printvec("t1 = accum(a1*a1<<52+sqrterm)", t1);
-	printvec("t2 = accum(a1*a1<<52+sqrterm)", t2);
-#endif
-	
-
-	// m1
-	m = mul52lo(t0, vrho);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("m = t0 * rho", m);
-#endif
-	
-
-	VEC_MUL_ACCUM_LOHI_PD(m, n0, t0, C1);
-	VEC_MUL_ACCUM_LOHI_PD(m, n1, t1, t2);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("m*n0 lo", t0);
-	printvec("m*n0 hi", C1);
-	printvec("m*n1 lo", t1);
-	printvec("m*n1 hi", C2);
-#endif
-	
-
-	t1 = _mm512_add_epi64(t1, C1);
-
-	// final carryprop
-	carryprop(t0, t1, lo52mask);
-	carryprop(t1, t2, lo52mask);
-	carryprop(t2, C2, lo52mask);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0 = after carryprop", t0);
-	printvec("t1 = after carryprop", t1);
-	printvec("t2 = after carryprop", t2);
-#endif
-
-	scarry = _mm512_cmp_epu64_mask(C2, zero, _MM_CMPINT_GT);
-
-	if (protectmsk)
-	{
-		scarry |=
-			_mm512_mask_cmpgt_epu64_mask(protectmsk, t2, n1) |
-			(_mm512_mask_cmpeq_epu64_mask(protectmsk, t2, n1) & 
-				_mm512_mask_cmpge_epu64_mask(protectmsk, t1, n0));
-	}
-
-	// conditionally subtract when needed (AMM - only on overflow)
-	t1 = _mm512_mask_sub_epi64(t1, scarry, t1, n0);
-	t2 = _mm512_mask_sub_epi64(t2, scarry, t2, n1);
-	C1 = _mm512_srli_epi64(t1, 63);
-	t2 = _mm512_mask_sub_epi64(t2, scarry, t2, C1);
-	t1 = _mm512_and_epi64(lo52mask, t1);
-	t2 = _mm512_and_epi64(lo52mask, t2);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0 = after modsub (overflow)", t1);
-	printvec("t1 = after modsub (overflow)", t2);
-#endif
-
-	// conditional addmod (double result)
-	// add
-	t1 = _mm512_mask_slli_epi64(t1, addmsk, t1, 1);
-	t2 = _mm512_mask_slli_epi64(t2, addmsk, t2, 1);
-	// when doubling, it is safe to check both carries before adding
-	// in the previous carry, because the shift makes room for
-	// the previous carry.  So either the upper word shift generates
-	// a carry or doesn't, the addition won't cause one.
-	C1 = _mm512_srli_epi64(t1, 52);
-	C2 = _mm512_srli_epi64(t2, 52);
-	t2 = _mm512_add_epi64(t2, C1);
-	t1 = _mm512_and_epi64(lo52mask, t1);
-	t2 = _mm512_and_epi64(lo52mask, t2);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0 = after double", t1);
-	printvec("t1 = after double", t2);
-	printvec("t2 = after double", C2);
-#endif
-
-	// We double a result that could be larger than N, therefore
-	// the result could be more than twice as large as N and may
-	// have two overflow bits.  So we need to conditionally sub 
-	// up to two times.
-	__mmask8 bmsk = _mm512_mask_cmpgt_epu64_mask(addmsk, C2, zero);
-
-	// conditionally subtract N (AMM - on overflow only)
-	t1 = _mm512_mask_sub_epi64(t1, bmsk & addmsk, t1, n0);
-	t2 = _mm512_mask_sub_epi64(t2, bmsk & addmsk, t2, n1);
-	C1 = _mm512_srli_epi64(t1, 63);
-	t2 = _mm512_mask_sub_epi64(t2, bmsk & addmsk, t2, C1);
-
-	if (protectmsk)
-	{
-		//t1 = _mm512_mask_subsetc_epi52(t1, bmsk & addmsk, t1, n0, &scarry);
-		//t2 = _mm512_mask_sbb_epi52(t2, bmsk & addmsk, scarry, n1, &scarry);
-		//C2 = _mm512_mask_sbb_epi52(C2, bmsk & addmsk, scarry, zero, &scarry);
-		
-		C2 = _mm512_mask_sub_epi64(C2, bmsk & addmsk & protectmsk, C2, _mm512_srli_epi64(t2, 63));
-		t2 = _mm512_mask_and_epi64(t2, bmsk & addmsk & protectmsk, lo52mask, t2);
-		bmsk = _mm512_mask_cmpgt_epu64_mask(addmsk & protectmsk, C2, zero);
-		t1 = _mm512_mask_subsetc_epi52(t1, bmsk & addmsk & protectmsk, t1, n0, &scarry);
-		t2 = _mm512_mask_sbb_epi52(t2, bmsk & addmsk & protectmsk, scarry, n1, &scarry);
-
-#ifdef DEBUG_SQRMASKADD
-		C2 = _mm512_mask_sbb_epi52(C2, bmsk & addmsk, scarry, zero, &scarry);
-		if (_mm512_cmpgt_epi64_mask(C2, zero) & bmsk & addmsk)
-		{
-			printf("assert failed, still a carry after conditional subtract\n");
-			printvec("t0 ", t1);
-			printvec("t1 ", t2);
-			printvec("t2 ", C2);
-			printvec("in1", *a1);
-			printvec("in0", *a0);
-			printvec("n1 ", n1);
-			printvec("n0 ", n0);
-			printvec("rho", vrho);
-			exit(1);
-		}
-#endif
-	}
-
-	//C2 = _mm512_sub_epi64(C2, _mm512_srli_epi64(t2, 63));
-	//bmsk = _mm512_mask_cmpgt_epu64_mask(addmsk, C2, zero);
-	//
-	//// conditionally subtract N (AMM - on overflow only)
-	//t1 = _mm512_mask_sub_epi64(t1, bmsk & addmsk, t1, n0);
-	//t2 = _mm512_mask_sub_epi64(t2, bmsk & addmsk, t2, n1);
-	//C1 = _mm512_srli_epi64(t1, 63);
-	//t2 = _mm512_mask_sub_epi64(t2, bmsk & addmsk, t2, C1);
-
-	*a0 = _mm512_and_epi64(lo52mask, t1);
-	*a1 = _mm512_and_epi64(lo52mask, t2);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("t0 = after modsub (overflow)", t1);
-	printvec("t1 = after modsub (overflow)", t2);
-#endif
-	
 
 	return;
 }
@@ -1107,7 +914,7 @@ __inline static void submod104_x8(__m512i* c1, __m512i* c0, __m512i a1, __m512i 
 	return;
 }
 
-static uint64_t multiplicative_inverse(uint64_t a)
+static __inline uint64_t multiplicative_inverse(uint64_t a)
 {
 	// compute the 64-bit inverse of a mod 2^64
 	//    assert(a%2 == 1);  // the inverse (mod 2<<64) only exists for odd values
@@ -1123,7 +930,7 @@ static uint64_t multiplicative_inverse(uint64_t a)
 	return x4;
 }
 
-static __m512i multiplicative_inverse104_x8(uint64_t* a)
+static __inline __m512i multiplicative_inverse104_x8(uint64_t* a)
 {
 	//    assert(a%2 == 1);  // the inverse (mod 2<<64) only exists for odd values
 	__m512i x0, x1, x2, x3, x4, x5, y, n, i0, i1;
@@ -1282,7 +1089,6 @@ uint8_t fermat_prp_104x8(uint64_t* n)
 	// do a base-2 fermat prp test on each using LR binexp.
 	__m512i vrho = multiplicative_inverse104_x8(n);
 	vec_u104_t unity;
-	vec_u104_t r;
 	__m512i nvec[2];
 	__m512i evec[2];
 	__m512i m;
@@ -1298,12 +1104,6 @@ uint8_t fermat_prp_104x8(uint64_t* n)
 	submod104_x8(&evec[1], &evec[0], 
 		nvec[1], nvec[0], zero, one, nvec[1], nvec[0]);
 
-#ifdef DEBUG_SQRMASKADD
-	printvec("n'", vrho);
-	printvec("n1", nvec[1]);
-	printvec("n0", nvec[0]);
-#endif
-	
 	// the 128-bit division we do the slow way
 	int i;
 	for (i = 0; i < 8; i++)
@@ -1314,9 +1114,6 @@ uint8_t fermat_prp_104x8(uint64_t* n)
 
 		unity.data[0][i] = (uint64_t)t & 0xfffffffffffffULL;
 		unity.data[1][i] = (uint64_t)(t >> 52);
-
-		r.data[0][i] = unity.data[0][i];
-		r.data[1][i] = unity.data[1][i];
 	}
 
 	// penultimate-hi-bit mask
@@ -1331,21 +1128,11 @@ uint8_t fermat_prp_104x8(uint64_t* n)
 	// Note: the first 5 iterations can be done much more cheaply in
 	// single precision and then converted into montgomery representation,
 	// but that would require a 208-bit division; not worth it.
-	__m512i r0 = loadu64(r.data[0]);
-	__m512i r1 = loadu64(r.data[1]);
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("one1", r1);
-	printvec("one0", r0);
-#endif
+	__m512i r0 = loadu64(unity.data[0]);
+	__m512i r1 = loadu64(unity.data[1]);
 
 	addmod104_x8(&r1, &r0, r1, r0, r1, r0, nvec[1], nvec[0]);
 
-#ifdef DEBUG_SQRMASKADD
-	printvec("two1", r1);
-	printvec("two0", r0);
-#endif
-	
 	__mmask8 done;
 	if (protect)
 	{
@@ -1354,25 +1141,8 @@ uint8_t fermat_prp_104x8(uint64_t* n)
 		{
 			__mmask8 bitcmp = _mm512_test_epi64_mask(m, evec[1]);
 
-#ifdef DEBUG_SQRMASKADD
-			printf("mask = %u", bitcmp & 1);
-			for (i = 1; i < 8; i++) printf(",%u", bitcmp & (1 << i));
-			printf("\n");
-#endif
-
-			//sqrredc_maskadd_vec(&r1, &r0, bitcmp, protect, nvec[1], nvec[0], vrho);
-			mask_sqrredc104_vec(&r1, &r0, ~done, r1, r0, nvec[1], nvec[0], vrho);
-			mask_redsub104_x8(&r1, &r0, (~done) & protect, r1, r0, nvec[1], nvec[0]);
-#ifdef DEBUG_SQRMASKADD
-				printvec("r1 after protect redsub", r1);
-				printvec("r0 after protect redsub", r0);
-#endif
+			mask_sqrredc104_exact_vec(&r1, &r0, ~done, r1, r0, nvec[1], nvec[0], vrho);
 			mask_dblmod104_x8(&r1, &r0, (~done) & bitcmp, r1, r0, nvec[1], nvec[0]);
-
-#ifdef DEBUG_SQRMASKADD
-			printvec("r1 after dblmod", r1);
-			printvec("r0 after dblmod", r0);
-#endif
 
 			m = _mm512_srli_epi64(m, 1);
 			done = _mm512_cmpeq_epu64_mask(m, zero);
@@ -1386,20 +1156,8 @@ uint8_t fermat_prp_104x8(uint64_t* n)
 		{
 			__mmask8 bitcmp = _mm512_test_epi64_mask(m, evec[1]);
 
-#ifdef DEBUG_SQRMASKADD
-			printf("mask = %u", bitcmp & 1);
-			for (i = 1; i < 8; i++) printf(",%u", bitcmp & (1 << i));
-			printf("\n");
-#endif
-
-			//sqrredc_maskadd_vec(&r1, &r0, bitcmp, protect, nvec[1], nvec[0], vrho);
 			mask_sqrredc104_vec(&r1, &r0, ~done, r1, r0, nvec[1], nvec[0], vrho);
 			mask_dblmod104_x8(&r1, &r0, (~done) & bitcmp, r1, r0, nvec[1], nvec[0]);
-
-#ifdef DEBUG_SQRMASKADD
-			printvec("r1 after dblmod", r1);
-			printvec("r0 after dblmod", r0);
-#endif
 
 			m = _mm512_srli_epi64(m, 1);
 			done = _mm512_cmpeq_epu64_mask(m, zero);
@@ -1417,30 +1175,13 @@ uint8_t fermat_prp_104x8(uint64_t* n)
 		{
 			__mmask8 bitcmp = _mm512_test_epi64_mask(m, evec[0]);
 
-#ifdef DEBUG_SQRMASKADD
-			printf("mask = %u", bitcmp & 1);
-			for (i = 1; i < 8; i++) printf(",%u", bitcmp & (1 << i));
-			printf("\n");
-#endif
-
-			//sqrredc_maskadd_vec(&r1, &r0, bitcmp, protect, nvec[1], nvec[0], vrho);
-			mask_sqrredc104_vec(&r1, &r0, ~done, r1, r0, nvec[1], nvec[0], vrho);
-			mask_redsub104_x8(&r1, &r0, (~done) & protect, r1, r0, nvec[1], nvec[0]);
-#ifdef DEBUG_SQRMASKADD
-				printvec("r1 after protect redsub", r1);
-				printvec("r0 after protect redsub", r0);
-#endif
+			mask_sqrredc104_exact_vec(&r1, &r0, ~done, r1, r0, nvec[1], nvec[0], vrho);
 			mask_dblmod104_x8(&r1, &r0, (~done) & bitcmp, r1, r0, nvec[1], nvec[0]);
-
-#ifdef DEBUG_SQRMASKADD
-			printvec("r1 after dblmod", r1);
-			printvec("r0 after dblmod", r0);
-#endif
 
 			m = _mm512_srli_epi64(m, 1);
 			done = _mm512_cmpeq_epu64_mask(m, zero);
 		}
-		}
+	}
 	else
 	{
 
@@ -1449,48 +1190,21 @@ uint8_t fermat_prp_104x8(uint64_t* n)
 		{
 			__mmask8 bitcmp = _mm512_test_epi64_mask(m, evec[0]);
 
-#ifdef DEBUG_SQRMASKADD
-			printf("mask = %u", bitcmp & 1);
-			for (i = 1; i < 8; i++) printf(",%u", bitcmp & (1 << i));
-			printf("\n");
-#endif
-
-			//sqrredc_maskadd_vec(&r1, &r0, bitcmp, protect, nvec[1], nvec[0], vrho);
 			mask_sqrredc104_vec(&r1, &r0, ~done, r1, r0, nvec[1], nvec[0], vrho);
 			mask_dblmod104_x8(&r1, &r0, (~done) & bitcmp, r1, r0, nvec[1], nvec[0]);
 
-#ifdef DEBUG_SQRMASKADD
-			printvec("r1 after dblmod", r1);
-			printvec("r0 after dblmod", r0);
-#endif
-
 			m = _mm512_srli_epi64(m, 1);
 			done = _mm512_cmpeq_epu64_mask(m, zero);
+		}
 	}
-	}
-
-#ifdef DEBUG_SQRMASKADD
-	printvec("r1", r1);
-	printvec("r0", r0);
-#endif
 
 	// AMM possibly needs a final correction by n
-	mask_redsub104_x8(&r1, &r0, 0xff, r1, r0, nvec[1], nvec[0]);
+	addmod104_x8(&r1, &r0, r1, r0, zero, zero, nvec[1], nvec[0]);
 
-#ifdef DEBUG_SQRMASKADD
-	printvec("r1", r1);
-	printvec("r0", r0);
-#endif
-	
 	uint8_t isprp = 
 		_mm512_cmpeq_epu64_mask(loadu64(unity.data[0]), r0) &
 		_mm512_cmpeq_epu64_mask(loadu64(unity.data[1]), r1);
 
-#ifdef DEBUG_SQRMASKADD
-	printf("result mask = %02x\n", isprp);
-#endif
-	
-	
 	return isprp;
 }
 
@@ -1554,9 +1268,7 @@ uint8_t MR_2sprp_104x8(uint64_t* n)
 	// do a Miller-Rabin sprp test using base 2.
 	__m512i vrho = multiplicative_inverse104_x8(n);
 	__m512i mone[2];
-	vec_u104_t rvec;
-	vec_u104_t onevec;
-	vec_u104_t twovec;
+	vec_u104_t unity;
 	__m512i nv[2];
 	__m512i dv[2];
 	__m512i rv[2];
@@ -1582,12 +1294,12 @@ uint8_t MR_2sprp_104x8(uint64_t* n)
 		uint128_t one = (uint128_t)1 << 104;
 		one %= mod;
 
-		onevec.data[0][i] = (uint64_t)one & 0xfffffffffffffULL;
-		onevec.data[1][i] = (uint64_t)(one >> 52) & 0xfffffffffffffULL;
+		unity.data[0][i] = (uint64_t)one & 0xfffffffffffffULL;
+		unity.data[1][i] = (uint64_t)(one >> 52) & 0xfffffffffffffULL;
 	}
 
-	mone[0] = loadu64(onevec.data[0]);
-	mone[1] = loadu64(onevec.data[1]);
+	mone[0] = loadu64(unity.data[0]);
+	mone[1] = loadu64(unity.data[1]);
 
 	// compute d and tzcnt
 	submod104_x8(&n1v[1], &n1v[0], nv[1], nv[0], zerov, onev, nv[1], nv[0]);
@@ -1626,8 +1338,7 @@ uint8_t MR_2sprp_104x8(uint64_t* n)
 		{
 			__mmask8 bitcmp = _mm512_test_epi64_mask(m, dv[1]);
 
-			mask_sqrredc104_vec(&rv[1], &rv[0], ~done, rv[1], rv[0], nv[1], nv[0], vrho);
-			mask_redsub104_x8(&rv[1], &rv[0], (~done) & protect, rv[1], rv[0], nv[1], nv[0]);
+			mask_sqrredc104_exact_vec(&rv[1], &rv[0], ~done, rv[1], rv[0], nv[1], nv[0], vrho);
 			mask_dblmod104_x8(&rv[1], &rv[0], (~done) & bitcmp, rv[1], rv[0], nv[1], nv[0]);
 
 			m = _mm512_srli_epi64(m, 1);
@@ -1660,8 +1371,7 @@ uint8_t MR_2sprp_104x8(uint64_t* n)
 		{
 			__mmask8 bitcmp = _mm512_test_epi64_mask(m, dv[0]);
 
-			mask_sqrredc104_vec(&rv[1], &rv[0], ~done, rv[1], rv[0], nv[1], nv[0], vrho);
-			mask_redsub104_x8(&rv[1], &rv[0], (~done) & protect, rv[1], rv[0], nv[1], nv[0]);
+			mask_sqrredc104_exact_vec(&rv[1], &rv[0], ~done, rv[1], rv[0], nv[1], nv[0], vrho);
 			mask_dblmod104_x8(&rv[1], &rv[0], (~done) & bitcmp, rv[1], rv[0], nv[1], nv[0]);
 
 			m = _mm512_srli_epi64(m, 1);
@@ -1728,19 +1438,17 @@ uint8_t MR_2sprp_104x8(uint64_t* n)
 }
 
 // a Miller-Rabin SPRP test on 8x 104-bit inputs using an
-// independent base on each
+// independent arbitrary 52-bit base on each
 uint8_t MR_sprp_104x8(uint64_t* n, uint64_t *bases)
 {
 	// assumes has no small factors.  assumes n >= 54 bits.
 	// assumes n is a list of 8 104-bit integers (16 52-bit words)
 	// in the format: 8 lo-words, 8 hi-words.
-	// assume bases is a list of 8 small bases, one for each input n.
+	// assume bases is a list of 8 small (single-word) bases, one for each input n.
 	// do a Miller-Rabin sprp test on each using the supplied bases.
 	__m512i vrho = multiplicative_inverse104_x8(n);
 	__m512i mone[2];
-	vec_u104_t rvec;
-	vec_u104_t onevec;
-	vec_u104_t twovec;
+	vec_u104_t unity;
 	__m512i nv[2];
 	__m512i dv[2];
 	__m512i rv[2];
@@ -1766,13 +1474,12 @@ uint8_t MR_sprp_104x8(uint64_t* n, uint64_t *bases)
 		uint128_t one = (uint128_t)1 << 104;
 		one %= mod;
 
-		onevec.data[0][i] = (uint64_t)one & 0xfffffffffffffULL;
-		onevec.data[1][i] = (uint64_t)(one >> 52);
-
+		unity.data[0][i] = (uint64_t)one & 0xfffffffffffffULL;
+		unity.data[1][i] = (uint64_t)(one >> 52);
 	}
 
-	mone[0] = loadu64(onevec.data[0]);
-	mone[1] = loadu64(onevec.data[1]);
+	mone[0] = loadu64(unity.data[0]);
+	mone[1] = loadu64(unity.data[1]);
 
 	// get bases into Monty rep
 	bv[0] = loadu64(bases);
@@ -1906,8 +1613,9 @@ uint8_t MR_sprp_104x8(uint64_t* n, uint64_t *bases)
 uint8_t MR_sprp_104x8base(uint64_t* n, uint64_t* one, uint64_t *bases)
 {
 	// assumes has no small factors and is odd.  assumes n >= 54 bits.
-	// assumes n is a 104-bit integer with two 52 bit words: [lo,hi]
-	// assume bases is a list of 8 small bases
+	// assumes n is a 104-bit integer with two 52 bit words: [lo,hi].
+	// assumes one is a 104-bit integer equal to (1 << 104) mod n.
+	// assume bases is a list of 8 small (single-word) bases.
 	// do a Miller-Rabin sprp test on the input to each supplied base.
 	// uint128_t n128 = ((uint128_t)n[1] << 52) + (uint128_t)n[0];
 	__m512i vrho = _mm512_set1_epi64(multiplicative_inverse(n[0]));
@@ -2098,12 +1806,12 @@ uint8_t MR_sprp_104x8base(uint64_t* n, uint64_t* one, uint64_t *bases)
 		sqrredc104_vec(&bv[1], &bv[0], bv[1], bv[0], nv[1], nv[0], vrho);
 	}
 
-	for (; i < 52; i++)
+	for (; (i < 52) && (d[1] > 0); i++)
 	{
 		sqrredc104_vec(&bv[1], &bv[0], bv[1], bv[0], nv[1], nv[0], vrho);
 	}
 
-	while (d[1] > 1)
+	while (d[1] > 0)
 	{
 		if (d[1] & 1)
 			mask_mulredc104_vec(&rv[1], &rv[0], 0xff,
@@ -2111,16 +1819,12 @@ uint8_t MR_sprp_104x8base(uint64_t* n, uint64_t* one, uint64_t *bases)
 
 		d[1] >>= 1;
 
-		sqrredc104_vec(&bv[1], &bv[0], bv[1], bv[0], nv[1], nv[0], vrho);
+		if (d[1])
+			sqrredc104_vec(&bv[1], &bv[0], bv[1], bv[0], nv[1], nv[0], vrho);
 	}
-	mask_mulredc104_vec(&rv[1], &rv[0], 0xff,
-		rv[1], rv[0], bv[1], bv[0], nv[1], nv[0], vrho);
 
 #endif
 	
-
-	
-
 	// AMM possibly needs a final correction by n
 	addmod104_x8(&rv[1], &rv[0], zerov, zerov, rv[1], rv[0], nv[1], nv[0]);
 
@@ -2168,10 +1872,13 @@ int main(int argc, char** argv)
 	uint64_t prp[16];
 	int correct = 0;
 	int i, k;
+
+#ifdef GMP_CHECK
 	mpz_t gmp2, gmpn, gmpn1;
 	mpz_init(gmp2);
 	mpz_init(gmpn);
 	mpz_init(gmpn1);
+#endif
 
 #ifndef IFMA
 	dbias = _mm512_castsi512_pd(set64(0x4670000000000000ULL));
@@ -2187,7 +1894,7 @@ int main(int argc, char** argv)
 	uint64_t elapsed;
 
 	// test of fermat_prp_52x8 on random 6k+1 inputs
-	for (bits = 70; bits <= 52; bits+=5)
+	for (bits = 20; bits <= 52; bits+=1)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1 = my_rdtsc();
@@ -2251,7 +1958,7 @@ int main(int argc, char** argv)
 	printf("\n");
 
 	// test of fermat_prp_104x8 on random 6k+1 inputs
-	for (bits = 100; bits <= 50; bits+=1)
+	for (bits = 50; bits <= 104; bits+=5)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1 = my_rdtsc();
@@ -2294,7 +2001,8 @@ int main(int argc, char** argv)
 				numprp += _mm_popcnt_u32(prpmask);
 				for (i = 0; i < 8; i++)
 				{
-					if (0 && ((prpmask & (1<<i)) == 0))
+#ifdef GMP_CHECK
+					if ((prpmask & (1<<i)) == 0)
 					{
 						mpz_set_ui(gmp2, 2);
 						mpz_set_ui(gmpn, prp[8+i]);
@@ -2310,11 +2018,11 @@ int main(int argc, char** argv)
 							fail++;
 						}
 					}
+#endif
 					prp[i] += inc;
 				}
 				inc = 6 - inc;
 			}
-			//printf("verified %d prps\n", numprp);
 
 			k++;
 			ticks2 = my_rdtsc();
@@ -2325,14 +2033,81 @@ int main(int argc, char** argv)
 		
 		printf("total ticks = %lu, ticks per %d-bit input = %lu\n",
 			elapsed, bits, (elapsed) / (k * num * 8));
-		printf("found %d fermat-prp out of %u %d-bit inputs (%d fails): %1.2f%%\n",
-			numprp, k * num * 8, bits, fail, 100. * (double)numprp / (double)(k * num * 8));
+		printf("found %d fermat-prp out of %u %d-bit inputs: %1.2f%%\n",
+			numprp, k * num * 8, bits, 100. * (double)numprp / (double)(k * num * 8));
+#ifdef GMP_CHECK
+		printf("GMP checked number of failures: %d\n", fail);
+#endif
+		printf("elapsed time: %1.4f sec, %1.4f us / input\n", telapsed, 1000000. * telapsed / (double)(k * num * 8));
+	}
+	printf("\n");
+
+	// test of fermat_prp_52x8 on random 6k+1 inputs
+	for (bits = 20; bits <= 52; bits += 1)
+	{
+		uint32_t numprp = 0;
+		uint64_t ticks1 = my_rdtsc();
+		uint64_t ticks2;
+		uint32_t num = 1000000;
+		double telapsed = 0;
+		int k;
+		if (bits > 52) bits = 52;
+
+		numprp = 0;
+		k = 0;
+		elapsed = 0;
+		telapsed = 0;
+		do {
+			for (i = 0; i < 8; i++)
+			{
+				uint64_t x;
+				do {
+					x = my_random();
+					uint128_t maskAnd = ((uint128_t)1 << (bits - 1)) - 1;	// clear msbits
+					uint128_t maskOr = ((uint128_t)1 << (bits - 1)) | ((uint128_t)1 << (bits / 2));	// force msb, force another bit
+					x &= maskAnd;
+					x |= maskOr;
+					x /= 6;
+					x *= 6;	// now a multiple of 6
+					x += 1;	// number like 6*k + 1
+				} while (x >> (bits - 1) != 1);
+				prp[i] = (uint64_t)x & 0xfffffffffffffull;
+			}
+
+			ticks1 = my_rdtsc();
+			gettimeofday(&start, NULL);
+
+			uint64_t inc = 4;
+			int j;
+
+			for (j = 0; j < num; j++)
+			{
+				numprp += _mm_popcnt_u32(MR_2sprp_52x8(prp));
+				for (i = 0; i < 8; i++)
+				{
+					prp[i] += inc;
+				}
+				inc = 6 - inc;
+			}
+
+			k++;
+			ticks2 = my_rdtsc();
+			elapsed += (ticks2 - ticks1);
+			gettimeofday(&stop, NULL);
+			telapsed += _difftime(&start, &stop);
+
+		} while (elapsed < (1ull << 30));
+
+		printf("total ticks = %lu, ticks per %d-bit input = %lu\n",
+			elapsed, bits, (elapsed) / (k * num * 8));
+		printf("found %d MR-2sprp out of %u %d-bit inputs: %1.2f%%\n",
+			numprp, k * num * 8, bits, 100. * (double)numprp / (double)(k * num * 8));
 		printf("elapsed time: %1.4f sec, %1.4f us / input\n", telapsed, 1000000. * telapsed / (double)(k * num * 8));
 	}
 	printf("\n");
 
 	// test of MR_2sprp_104x8 on random 6k+1 inputs
-	for (bits = 100; bits <= 50; bits+=1)
+	for (bits = 50; bits <= 104; bits+=1)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1 = my_rdtsc();
@@ -2375,7 +2150,8 @@ int main(int argc, char** argv)
 				numprp += _mm_popcnt_u32(prpmask);
 				for (i = 0; i < 8; i++)
 				{
-					if (0 && ((prpmask & (1 << i)) == 0))
+#ifdef GMP_CHECK
+					if ((prpmask & (1 << i)) == 0)
 					{
 						mpz_set_ui(gmp2, 2);
 						mpz_set_ui(gmpn, prp[8 + i]);
@@ -2391,6 +2167,7 @@ int main(int argc, char** argv)
 							fail++;
 						}
 					}
+#endif
 					prp[i] += inc;
 				}
 				inc = 6 - inc;
@@ -2405,8 +2182,11 @@ int main(int argc, char** argv)
 		
 		printf("total ticks = %lu, ticks per %d-bit input = %lu\n",
 			elapsed, bits, (elapsed) / (k * num * 8));
-		printf("found %d MR-2sprp out of %u %d-bit inputs (%d fails): %1.2f%%\n",
-			numprp, k * num * 8, bits, fail, 100. * (double)numprp / (double)(k * num * 8));
+		printf("found %d MR-2sprp out of %u %d-bit inputs: %1.2f%%\n",
+			numprp, k * num * 8, bits, 100. * (double)numprp / (double)(k * num * 8));
+#ifdef GMP_CHECK
+		printf("GMP checked number of failures: %d\n", fail);
+#endif
 		printf("elapsed time: %1.4f sec, %1.4f us / input\n", telapsed, 1000000. * telapsed / (double)(k * num * 8));
 	}
 	printf("\n");
@@ -2420,7 +2200,7 @@ int main(int argc, char** argv)
 		79, 83, 89, 97};
 		
 	// test of MR_sprp_104x8 on PRP 6k+1 inputs
-	for (bits = 100; bits <= 50; bits+=1)
+	for (bits = 50; bits <= 104; bits+=1)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1 = my_rdtsc();
@@ -2459,7 +2239,6 @@ int main(int argc, char** argv)
 			
 			for (i = 0; i < 8; i++)
 			{			
-				//printf("%016lx%016lx : %u (%u)\n", prp[i+8], prp[i], isprp & (1 << i), isprp);
 				if ((isprp & (1 << i)) == 0)
 				{
 					prp[i] += inc[i];
@@ -2498,7 +2277,8 @@ int main(int argc, char** argv)
 			uint8_t prpmask = MR_sprp_104x8(prp, currentbase);
 			for (i = 0; i < 8; i++)
 			{
-				if (1 && ((prpmask & (1 << i)) == 0))
+#ifdef GMP_CHECK
+				if ((prpmask & (1 << i)) == 0)
 				{
 					mpz_set_ui(gmpn, prp[8 + i]);
 					mpz_mul_2exp(gmpn, gmpn, 52);
@@ -2511,6 +2291,7 @@ int main(int argc, char** argv)
 						fail++;
 					}
 				}
+#endif
 
 				if (prpmask & (1 << i))
 				{
@@ -2553,14 +2334,17 @@ int main(int argc, char** argv)
 		
 		printf("total ticks = %lu, ticks per %d-bit input = %lu\n",
 			elapsed, bits, (elapsed) / tested);
-		printf("found %d MR-sprp out of %u %d-bit inputs (%u fails): %1.2f%%\n",
-			numprp, tested, bits, fail, 100. * (double)numprp / (double)tested);
+		printf("found %d MR-sprp out of %u %d-bit inputs: %1.2f%%\n",
+			numprp, tested, bits, 100. * (double)numprp / (double)tested);
+#ifdef GMP_CHECK
+		printf("GMP checked number of failures: %d\n", fail);
+#endif
 		printf("elapsed time: %1.4f sec, %1.4f us / input\n", telapsed, 1000000. * telapsed / (double)tested);
 	}
 	printf("\n");
 
 	// test of MR_sprp_104x8base on PRP 6k+1 inputs
-	for (bits = 100; bits <= 104; bits+=1)
+	for (bits = 50; bits <= 104; bits+=1)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1;
@@ -2711,9 +2495,10 @@ int main(int argc, char** argv)
 	}
 	printf("\n");
 
+#ifdef GMP_CHECK
 	mpz_clear(gmpn);
 	mpz_clear(gmpn1);
 	mpz_clear(gmp2);
-
+#endif
 	return 0;
 }
