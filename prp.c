@@ -1018,8 +1018,354 @@ static __inline __m512i multiplicative_inverse104_x8(uint64_t* a)
 #define ROUNDING_MODE _MM_FROUND_CUR_DIRECTION
 #endif
 
+#define USE_PERIG_128BIT
+
+#ifdef USE_PERIG_128BIT
+typedef __uint128_t uint128_t;
+
+// borrow::diff = a - b - borrow_in
+#define INLINE_ASM 1
+static inline uint8_t my_sbb64(uint8_t borrow_in, uint64_t a, uint64_t b, uint64_t* diff)
+{
+#if (INLINE_ASM && defined(__x86_64__))
+	return _subborrow_u64(borrow_in, a, b, (unsigned long long*)diff);
+#elif defined(__GNUC__)
+	bool c;
+	c = __builtin_usubll_overflow(a, b, (unsigned long long*)diff);
+	c |= __builtin_usubll_overflow(*diff, borrow_in, (unsigned long long*)diff);
+	return c;
+#else
+	if (__builtin_constant_p(borrow_in) && borrow_in == 0) {
+		if (__builtin_constant_p(a) && a == 0) {
+			*diff = -b;
+			return 1;
+		}
+		else if (__builtin_constant_p(b) && b == 0) {
+			*diff = a;
+			return 0;
+		}
+		else {
+			uint64_t tmp = a - b;
+			uint8_t borrow = (tmp > a);
+			*diff = tmp;
+			return borrow;
+		}
+	}
+	else {
+		uint64_t tmp1 = a - borrow_in;
+		uint8_t borrow = (tmp1 > a);
+		if (__builtin_constant_p(b) && b == 0) {
+			*diff = tmp1;
+			return borrow;
+		}
+		else {
+			uint64_t tmp2 = tmp1 - b;
+			borrow |= (tmp2 > tmp1);
+			*diff = tmp2;
+			return borrow;
+		}
+	}
+#endif
+}
+
+// subtract until the result is less than the modulus
+static void ciosSubtract128(uint64_t* res_lo, uint64_t* res_hi, uint64_t carries, uint64_t mod_lo, uint64_t mod_hi)
+{
+	uint64_t n_lo, n_hi;
+	uint64_t t_lo, t_hi;
+	uint8_t b;
+	n_lo = *res_lo;
+	n_hi = *res_hi;
+	// save, subtract the modulus until a borrows occurs
+	do {
+		t_lo = n_lo;
+		t_hi = n_hi;
+		b = my_sbb64(0, n_lo, mod_lo, &n_lo);
+		b = my_sbb64(b, n_hi, mod_hi, &n_hi);
+		if (__builtin_constant_p(carries) && carries == 0) {
+		}
+		else {
+			b = my_sbb64(b, carries, 0, &carries);
+		}
+	} while (b == 0);
+	// get the saved values when a borrow occurs
+	*res_lo = t_lo;
+	*res_hi = t_hi;
+}
+
+static void ciosModMul128(uint64_t* res_lo, uint64_t* res_hi, uint64_t b_lo, uint64_t b_hi, uint64_t mod_lo, uint64_t mod_hi,
+	uint64_t mmagic)
+{
+	uint64_t a_lo = *res_lo, a_hi = *res_hi;
+	uint128_t cs, cc;
+	uint64_t t0, t1, t2, t3, m, ignore;
+
+	cc = (uint128_t)a_lo * b_lo;	// #1
+	t0 = (uint64_t)cc;
+	cc = cc >> 64;
+	cc += (uint128_t)a_lo * b_hi;	// #2
+	t1 = (uint64_t)cc;
+	cc = cc >> 64;
+	t2 = (uint64_t)cc;
+#if PARANOID
+	assert(cc >> 64 == 0);
+#endif
+
+	m = t0 * mmagic;	// #3
+	cs = (uint128_t)m * mod_lo;	// #4
+	cs += t0;
+	cs = cs >> 64;
+	cs += (uint128_t)m * mod_hi;	// #5
+	cs += t1;
+	t0 = (uint64_t)cs;
+	cs = cs >> 64;
+	cs += t2;
+	t1 = (uint64_t)cs;
+	cs = cs >> 64;
+	t2 = (uint64_t)cs;
+#if PARANOID
+	assert(cs >> 64 == 0);
+#endif
+
+	cc = (uint128_t)a_hi * b_lo;	// #6
+	cc += t0;
+	t0 = (uint64_t)cc;
+	cc = cc >> 64;
+	cc += (uint128_t)a_hi * b_hi;	// #7
+	cc += t1;
+	t1 = (uint64_t)cc;
+	cc = cc >> 64;
+	cc += t2;
+	t2 = (uint64_t)cc;
+	cc = cc >> 64;
+	t3 = (uint64_t)cc;
+#if PARANOID
+	assert(cc >> 64 == 0);
+#endif
+
+	m = t0 * mmagic;	// #8
+	cs = (uint128_t)m * mod_lo;	// #9
+	cs += t0;
+	cs = cs >> 64;
+	cs += (uint128_t)m * mod_hi;	// #10
+	cs += t1;
+	t0 = (uint64_t)cs;
+	cs = cs >> 64;
+	cs += t2;
+	t1 = (uint64_t)cs;
+	cs = cs >> 64;
+	cs += t3;
+	t2 = (uint64_t)cs;
+	if (t2) {
+		unsigned char carry = _subborrow_u64(0, t0, mod_lo, &t0);
+		_subborrow_u64(carry, t1, mod_hi, &t1);
+		//ciosSubtract128(&t0, &t1, t2, mod_lo, mod_hi);
+	}
+
+	*res_lo = t0;
+	*res_hi = t1;
+}
+
+/********************* end of Perig's 128-bit code **********************/
+
+// modSqr version I wrote based on the modMul
+static void ciosModSqr128(uint64_t* res_lo, uint64_t* res_hi, uint64_t b_lo, uint64_t b_hi, uint64_t mod_lo, uint64_t mod_hi,
+	uint64_t mmagic)
+{
+	uint128_t cs, cc, b_lohi;
+	uint64_t t0, t1, t2, t3, m, ignore;
+
+	cc = (uint128_t)b_lo * b_lo;	// #1
+	t0 = (uint64_t)cc;
+	cc = cc >> 64;
+	b_lohi = (uint128_t)b_lo * b_hi;	// #2
+	cc += b_lohi;
+	t1 = (uint64_t)cc;
+	cc = cc >> 64;
+	t2 = (uint64_t)cc;
+#if PARANOID
+	assert(cc >> 64 == 0);
+#endif
+
+	m = t0 * mmagic;	// #3
+	cs = (uint128_t)m * mod_lo;	// #4
+	cs += t0;
+	cs = cs >> 64;
+	cs += (uint128_t)m * mod_hi;	// #5
+	cs += t1;
+	t0 = (uint64_t)cs;
+	cs = cs >> 64;
+	cs += t2;
+	t1 = (uint64_t)cs;
+	cs = cs >> 64;
+	t2 = (uint64_t)cs;
+#if PARANOID
+	assert(cs >> 64 == 0);
+#endif
+
+	cc = b_lohi + t0;
+	t0 = (uint64_t)cc;
+	cc = cc >> 64;
+	cc += (uint128_t)b_hi * b_hi;	// #6
+	cc += t1;
+	t1 = (uint64_t)cc;
+	cc = cc >> 64;
+	cc += t2;
+	t2 = (uint64_t)cc;
+	cc = cc >> 64;
+	t3 = (uint64_t)cc;
+#if PARANOID
+	assert(cc >> 64 == 0);
+#endif
+
+	m = t0 * mmagic;	// #8
+	cs = (uint128_t)m * mod_lo;	// #9
+	cs += t0;
+	cs = cs >> 64;
+	cs += (uint128_t)m * mod_hi;	// #10
+	cs += t1;
+	t0 = (uint64_t)cs;
+	cs = cs >> 64;
+	cs += t2;
+	t1 = (uint64_t)cs;
+	cs = cs >> 64;
+	cs += t3;
+	t2 = (uint64_t)cs;
+	if (t2) {
+		unsigned char carry = _subborrow_u64(0, t0, mod_lo, &t0);
+		_subborrow_u64(carry, t1, mod_hi, &t1);
+		//ciosSubtract128(&t0, &t1, t2, mod_lo, mod_hi);
+	}
+
+	*res_lo = t0;
+	*res_hi = t1;
+}
+#endif
+
 #define LO(x) ((uint64_t)((x) & 0xffffffffffffffffull))
 #define HI(x) ((uint64_t)((x) >> 64))
+
+__inline void chkmod128(uint64_t* a, uint64_t* n)
+{
+
+#if defined(__x86_64__) && defined(__unix__)
+
+	// not really faster than the branching version below
+	// but probably should be checked on more cpus.
+	uint64_t t0, t1;
+	t0 = a[0];
+	t1 = a[1];
+	__asm__ volatile (
+		"xorq %%r8, %%r8 \n\t"
+		"xorq %%r9, %%r9 \n\t"
+		"subq %2, %%r8 \n\t"		/* t = 0 - n */
+		"sbbq %3, %%r9 \n\t"
+		"addq %0, %%r8 \n\t"		/* t += x */
+		"adcq %1, %%r9 \n\t"
+		"cmovc %%r8, %0 \n\t"
+		"cmovc %%r9, %1 \n\t"
+		: "+&r"(t0), "+&r"(t1)
+		: "r"(n[0]), "r"(n[1])
+		: "r8", "r9", "cc", "memory");
+
+	a[0] = t0;
+	a[1] = t1;
+#else
+
+	if ((a[1] > n[1]) || ((a[1] == n[1]) && (a[0] >= n[0])))
+	{
+		uint8_t c1 = _subborrow_u64(0, a[0], n[0], &a[0]);
+		_subborrow_u64(c1, a[1], n[1], &a[1]);
+	}
+
+#endif
+	return;
+}
+
+__inline void dblmod128(uint64_t* a, uint64_t* n)
+{
+
+#if defined(__x86_64__) && defined(__unix__)
+	// requires GCC_ASM64 syntax
+	uint64_t t1, t0;
+
+	// do the 2-word variant of this:
+	//uint64_t r;
+	//uint64_t tmp = x - n;
+	//uint8_t c = _addcarry_u64(0, tmp, y, &r);
+	//return (c) ? r : x + y;
+	t1 = a[1];
+	t0 = a[0];
+
+	__asm__ volatile (
+		"movq %%rax, %%r8 \n\t"
+		"movq %%rdx, %%r9 \n\t"
+		"subq %4, %%r8 \n\t"		/* t = x - n */
+		"sbbq %5, %%r9 \n\t"
+		"addq %%rax, %0 \n\t"		/* x += x */
+		"adcq %%rdx, %1 \n\t"
+		"addq %%rax, %%r8 \n\t"		/* t = t + x */
+		"adcq %%rdx, %%r9 \n\t"
+		"cmovc %%r8, %0 \n\t"
+		"cmovc %%r9, %1 \n\t"
+		: "+&r"(a[0]), "+&r"(a[1])
+		: "a"(t0), "d"(t1), "r"(n[0]), "r"(n[1])
+		: "r8", "r9", "cc", "memory");
+
+#else
+
+	uint128_t x = ((uint128_t)a[1] << 64) | a[0];
+	uint128_t n128 = ((uint128_t)n[1] << 64) | n[0];
+	uint128_t r = (x >= n128 - x) ? x - (n128 - x) : x + x;
+	a[1] = (uint64_t)(r >> 64);
+	a[0] = (uint64_t)r;
+
+#endif
+	return;
+}
+
+__inline void submod128(uint64_t* a, uint64_t* b, uint64_t* w, uint64_t* n)
+{
+#if 1 //defined(__x86_64__) && defined(__unix__)
+	// requires GCC_ASM64 syntax
+	__asm__(
+		"movq %6, %%r11 \n\t"
+		"xorq %%r8, %%r8 \n\t"
+		"xorq %%r9, %%r9 \n\t"
+		"movq %0, 0(%%r11) \n\t"
+		"movq %1, 8(%%r11) \n\t"
+		"subq %2, 0(%%r11) \n\t"
+		"sbbq %3, 8(%%r11) \n\t"
+		"cmovc %4, %%r8 \n\t"
+		"cmovc %5, %%r9 \n\t"
+		"addq %%r8, 0(%%r11) \n\t"
+		"adcq %%r9, 8(%%r11) \n\t"
+		"1: \n\t"
+		:
+	: "r"(a[0]), "r"(a[1]), "r"(b[0]), "r"(b[1]), "r"(n[0]), "r"(n[1]), "r"(w)
+		: "r8", "r9", "r11", "cc", "memory");
+
+#else
+
+	uint8_t c;
+	uint64_t t[2];
+	c = _subborrow_u64(0, a[0], b[0], &t[0]);
+	c = _subborrow_u64(c, a[1], b[1], &t[1]);
+	if (c)
+	{
+		c = _addcarry_u64(0, t[0], n[0], &w[0]);
+		c = _addcarry_u64(c, t[1], n[1], &w[1]);
+	}
+	else
+	{
+		w[0] = t[0];
+		w[1] = t[1];
+	}
+
+#endif
+
+	return;
+}
 
 __inline void mulmod128(uint64_t* u, uint64_t* v, uint64_t* w, uint64_t* n, uint64_t rho)
 {
@@ -1160,7 +1506,7 @@ __inline void mulmod128(uint64_t* u, uint64_t* v, uint64_t* w, uint64_t* n, uint
 	return;
 }
 
-__inline void sqrmod128(uint64_t* u, uint64_t* w, uint64_t* n, uint64_t rho)
+void sqrmod128(uint64_t* u, uint64_t* w, uint64_t* n, uint64_t rho)
 {
 	uint64_t t0, t1, t2, t3, t4, t5;
 
@@ -1184,36 +1530,11 @@ __inline void sqrmod128(uint64_t* u, uint64_t* w, uint64_t* n, uint64_t rho)
 	uint8_t c0, c1, c2;
 
 	t0 = HI(sqr);
-	t1 = HI(mn0);
 	t3 = HI(cross);
+	t1 = HI(mn0);
 	t4 = HI(mn1);
 
-#if 0 //defined(__x86_64__) && defined(__unix__)
-
-	t2 = m;
-
-	__asm__ volatile (
-		"xorq %%r11, %%r11 \n\t"	/* zero */
-
-		"subq %%rcx, %%r11 \n\t"	/* m != 0 */
-		"movq %3, %%r8 \n\t"
-		"movq %4, %%r9 \n\t"
-		"movq %5, %%r11 \n\t"
-		"adcq %%rbx, %%rax \n\t"	/* c1 = _addcarry_u64(m != 0, t0, t1, &t0); rax = tmp0 */
-		"adcq %%r8, %%r9 \n\t"		/* _addcarry_u64(c1, t3, t4, &t4);			r9 = t1 */
-		"xorq %%rcx, %%rcx \n\t"	/* t2 */
-		"addq %%rdx, %%r11 \n\t"	/* c2 = _addcarry_u64(0, mn1, cross, &t1);  r11 = tmp1*/
-		"adcq $0, %%r9 \n\t"		/* c1 = _addcarry_u64(c2, t4, 0, &t1);		r9 = t1 */
-		"adcq $0, %%rcx \n\t"		/* t2 = c1; */
-		"addq %%r11, %%rax \n\t"	/* c3 = _addcarry_u64(0, tmp0, tmp1, &t0); */
-		"adcq $0, %%r9 \n\t"		/* t1 += t3 */
-		"adcq $0, %%rcx \n\t"		/* t2 += c; */
-		"movq %%r9, %1 \n\t"		/* t1 */
-		: "+&a"(t0), "+&b"(t1), "+&c"(t2)
-		: "r"(t3), "r"(t4), "r"((uint64_t)mn1), "d"((uint64_t)cross)
-		: "r8", "r9", "r10", "r11", "cc", "memory");
-
-#elif defined(HAS_ADCX)
+#if defined(HAS_ADCX)
 
 	c2 = _addcarryx_u64(0, (uint64_t)mn0, (uint64_t)sqr, &t2);
 	c1 = _addcarryx_u64(0, (uint64_t)mn1, (uint64_t)cross, &t5);//
@@ -1244,7 +1565,6 @@ __inline void sqrmod128(uint64_t* u, uint64_t* w, uint64_t* n, uint64_t rho)
 	c1 = _addcarry_u64(c1, t3, t4, &t4);//1
 	c1 = _addcarry_u64(c2, t4, c3, &t1);//2
 	t2 = c1;//2
-
 
 #endif
 
@@ -1306,125 +1626,209 @@ __inline void sqrmod128(uint64_t* u, uint64_t* w, uint64_t* n, uint64_t rho)
 	return;
 }
 
-__inline void chkmod128(uint64_t* a, uint64_t* n)
+void sqrmod128_try2(uint64_t* u, uint64_t* w, uint64_t* n, uint64_t rho)
 {
+	//ciosModSqr128(&w[0], &w[1], u[0], u[1], n[0], n[1], rho);
+	//return;
 
-#if 0 //defined(__x86_64__) && defined(__unix__)
+
+	uint64_t t0, t1, t2, t3, t4, t5;
+	uint8_t c0, c1, c2;
+
+	// first round muls
+	uint64_t crosslo, crosshi;
+	uint64_t sqrlo, sqrhi;
+	uint64_t mn0lo, mn0hi;
+	uint64_t mn1lo, mn1hi;
+	uint64_t m;
+
+	sqrlo = _mulx_u64(u[0], u[0], &sqrhi);
+	m = sqrlo * rho;
+
+	// now sort out the additions and shifts
+	// we have:
+	// t0,c0 = LO(sqr) + LO(mn0), where c0 is always 1 unless m is 0
+	// t1,c1 = HI(sqr) + HI(mn0) + LO(mn1) + LO(cross) + c0
+	// t2,c2 = HI(mn1) + HI(cross) + c1
+	// then we shift so we'll have:
+	// t0 = HI(sqr) + HI(mn0) + LO(mn1) + LO(cross) + c0
+	// t1 = HI(mn1) + HI(cross) + c1
+	// t2 = c2
+
+	mn0lo = _mulx_u64(m, n[0], &mn0hi);
+	c2 = _addcarryx_u64(0, mn0lo, sqrlo, &t2);
+
+	crosslo = _mulx_u64(u[0], u[1], &crosshi);
+	mn1lo = _mulx_u64(m, n[1], &mn1hi);
+	c1 = _addcarryx_u64(0, mn1lo, crosslo, &t5);//
+
+	c2 = _addcarryx_u64(c2, sqrhi, mn0hi, &t0);
+	c1 = _addcarryx_u64(c1, mn1hi, crosshi, &t1);//
+	t2 = c1;//
+
+	c1 = _addcarry_u64(0, t0, t5, &t0);
+	_addcarry_u64(c1, t1, c2, &t1);
+
+
+	// second round muls
+	c0 = _addcarry_u64(0, crosslo, t0, &t0);
+	m = t0 * rho;
+
 	
-	// not really faster than the branching version below
-	// but probably should be checked on more cpus.
-	uint64_t t0, t1;
-	t0 = a[0];
-	t1 = a[1];
-	__asm__ volatile (
-		"xorq %%r8, %%r8 \n\t"
-		"xorq %%r9, %%r9 \n\t"
-		"subq %2, %%r8 \n\t"		/* t = 0 - n */
-		"sbbq %3, %%r9 \n\t"
-		"addq %0, %%r8 \n\t"		/* t += x */
-		"adcq %1, %%r9 \n\t"
-		"cmovc %%r8, %0 \n\t"
-		"cmovc %%r9, %1 \n\t"
-		: "+&r"(t0), "+&r"(t1)
-		: "r"(n[0]), "r"(n[1])
-		: "r8", "r9", "cc", "memory");
+	
+	
 
-	a[0] = t0;
-	a[1] = t1;
+	// now sort out the additions and shifts
+	// we have:
+	// t0,c0 = t0 + LO(cross) + LO(mn0)
+	// t1,c1 = t1 + LO(sqr) + HI(mn0) + LO(mn1) + HI(cross) + c0
+	// t2,c2 = HI(mn1) + HI(sqr) + c1
+	// then we shift so we'll have:
+	// t0 = t1 + LO(sqr) + HI(mn0) + LO(mn1) + HI(cross) + c0
+	// t1 = t2 + HI(mn1) + HI(sqr) + c1
+	// t2 = c2
+
+#if 1
+
+	uint64_t t1s = t1;
+
+	mn0lo = _mulx_u64(m, n[0], &mn0hi);
+	sqrlo = _mulx_u64(u[1], u[1], &sqrhi);
+	c1 = _addcarryx_u64(m != 0, sqrlo, mn0hi, &t3);
+
+	mn1lo = _mulx_u64(m, n[1], &mn1hi);
+	c2 = _addcarryx_u64(c0, mn1lo, crosshi, &t4);
+	c1 = _addcarryx_u64(c1, t2, mn1hi, &t1);
+	c2 = _addcarryx_u64(c2, t1, sqrhi, &t5);
+	t2 = c1;
+
+	
+	
+
+	c2 = _addcarry_u64(0, t3, t4, &t0);
+	c2 = _addcarry_u64(c2, t5, 0, &t1);
+	_addcarry_u64(c2, c1, t2, &t2);
+
+	c1 = _addcarry_u64(0, t0, t1s, &w[0]);
+	c1 = _addcarry_u64(c1, t1, 0, &w[1]);
+
 #else
 
-	if ((a[1] > n[1]) || ((a[1] == n[1]) && (a[0] >= n[0])))
-	{
-		uint8_t c1 = _subborrow_u64(0, a[0], n[0], &a[0]);
-		_subborrow_u64(c1, a[1], n[1], &a[1]);
-	}
+
+	c1 = _addcarry_u64(m != 0, t1, sqrlo, &t0);
+	c1 = _addcarry_u64(c1, t2, mn1hi, &t1);
+	t2 = c1;
+
+	c1 = _addcarry_u64(c0, t0, mn0hi, &t0);
+	c1 = _addcarry_u64(c1, t1, sqrhi, &t1);
+	t2 += c1;
+
+	c1 = _addcarry_u64(0, t0, mn1lo, &t0);
+	c1 = _addcarry_u64(c1, t1, 0, &t1);
+	//t2 += c1;
+
+	c1 = _addcarry_u64(0, t0, crosshi, &w[0]);
+	c1 = _addcarry_u64(c1, t1, 0, &w[1]);
+	//t2 += c1;
 
 #endif
+
+	if (t2 > 0) {
+		// conditionally subtract when needed (AMM - only on overflow)
+		c1 = _subborrow_u64(0, w[0], n[0], &w[0]);
+		c1 = _subborrow_u64(c1, w[1], n[1], &w[1]);
+	}
+
 	return;
 }
 
-__inline void dblmod128(uint64_t* a, uint64_t* n)
+void sqrmod128_try3(uint64_t* u, uint64_t* w, uint64_t* n, uint64_t rho)
 {
+	uint64_t a_lo = u[0], a_hi = u[1];
+	uint64_t cslo, cshi, cclo, cchi;
+	uint64_t t0, t1, t2, t3, m, ignore;
 
-#if defined(__x86_64__) && defined(__unix__)
-	// requires GCC_ASM64 syntax
-	uint64_t t1, t0;
+	cclo = _mulx_u64(a_lo, a_lo, &cchi);	// #1
+	t0 = cclo;
 
-	// do the 2-word variant of this:
-	//uint64_t r;
-	//uint64_t tmp = x - n;
-	//uint8_t c = _addcarry_u64(0, tmp, y, &r);
-	//return (c) ? r : x + y;
-	t1 = a[1];
-	t0 = a[0];
+	//cc += (uint128_t)a_lo * b_hi;	// #2
+	cslo = _mulx_u64(a_lo, a_hi, &cshi);	// #2
+	uint8_t c1 = _addcarry_u64(0, cchi, cslo, &t1);
+	_addcarry_u64(c1, 0, cshi, &t2);
 
-	__asm__ volatile (
-		"movq %%rax, %%r8 \n\t"
-		"movq %%rdx, %%r9 \n\t"
-		"subq %4, %%r8 \n\t"		/* t = x - n */
-		"sbbq %5, %%r9 \n\t"
-		"addq %%rax, %0 \n\t"		/* x += x */
-		"adcq %%rdx, %1 \n\t"
-		"addq %%rax, %%r8 \n\t"		/* t = t + x */
-		"adcq %%rdx, %%r9 \n\t"
-		"cmovc %%r8, %0 \n\t"
-		"cmovc %%r9, %1 \n\t"
-		: "+&r"(a[0]), "+&r"(a[1])
-		: "a"(t0), "d"(t1), "r"(n[0]), "r"(n[1])
-		: "r8", "r9", "cc", "memory");
-	
-#else
+	m = t0 * rho;	// #3
+	//cs = (uint128_t)m * mod_lo;	// #4
+	cslo = _mulx_u64(m, n[0], &cshi);	// #4
 
-	uint128_t x = ((uint128_t)a[1] << 64) | a[0];
-	uint128_t n128 = ((uint128_t)n[1] << 64) | n[0];
-	uint128_t r = (x >= n128 - x) ? x - (n128 - x) : x + x;
-	a[1] = (uint64_t)(r >> 64);
-	a[0] = (uint64_t)r;
+	//cs += t0;
+	c1 = _addcarry_u64(0, t0, cslo, &cslo);
+	c1 = _addcarry_u64(c1, 0, cshi, &cshi);
 
-#endif
-	return;
-}
+	//cs += (uint128_t)m * mod_hi;	// #5
+	cclo = _mulx_u64(m, n[1], &cchi);	// #5
+	c1 = _addcarry_u64(0, cclo, cshi, &cslo);
+	c1 = _addcarry_u64(c1, cchi, 0, &cshi);
 
-__inline void submod128(uint64_t* a, uint64_t* b, uint64_t* w, uint64_t* n)
-{
-#if 1 //defined(__x86_64__) && defined(__unix__)
-	// requires GCC_ASM64 syntax
-	__asm__(
-		"movq %6, %%r11 \n\t"
-		"xorq %%r8, %%r8 \n\t"
-		"xorq %%r9, %%r9 \n\t"
-		"movq %0, 0(%%r11) \n\t"
-		"movq %1, 8(%%r11) \n\t"
-		"subq %2, 0(%%r11) \n\t"
-		"sbbq %3, 8(%%r11) \n\t"
-		"cmovc %4, %%r8 \n\t"
-		"cmovc %5, %%r9 \n\t"
-		"addq %%r8, 0(%%r11) \n\t"
-		"adcq %%r9, 8(%%r11) \n\t"
-		"1: \n\t"
-		:
-	: "r"(a[0]), "r"(a[1]), "r"(b[0]), "r"(b[1]), "r"(n[0]), "r"(n[1]), "r"(w)
-		: "r8", "r9", "r11", "cc", "memory");
+	//cs += t1;
+	c1 = _addcarry_u64(0, t1, cslo, &cslo);
+	c1 = _addcarry_u64(c1, 0, cshi, &cshi);
 
-#else
+	t0 = cslo;
 
-	uint8_t c;
-	uint64_t t[2];
-	c = _subborrow_u64(0, a[0], b[0], &t[0]);
-	c = _subborrow_u64(c, a[1], b[1], &t[1]);
-	if (c)
-	{
-		c = _addcarry_u64(0, t[0], n[0], &w[0]);
-		c = _addcarry_u64(c, t[1], n[1], &w[1]);
+	//cs += t2;
+	c1 = _addcarry_u64(0, t2, cshi, &t1);
+	c1 = _addcarry_u64(c1, 0, 0, &t2);
+
+	//cc = (uint128_t)a_hi * b_lo;	// #6
+	cclo = _mulx_u64(a_lo, a_hi, &cchi);	// #6
+
+	//cc += t0;
+	c1 = _addcarry_u64(0, t0, cclo, &t0);
+	c1 = _addcarry_u64(c1, 0, cchi, &cchi);
+
+	//cc += (uint128_t)a_hi * b_hi;	// #7
+	cslo = _mulx_u64(a_hi, a_hi, &cshi);	// #7
+	c1 = _addcarry_u64(0, cchi, cslo, &cclo);
+	c1 = _addcarry_u64(c1, 0, cshi, &cchi);
+
+	//cc += t1;
+	c1 = _addcarry_u64(0, cclo, t1, &t1);
+	c1 = _addcarry_u64(c1, cchi, 0, &cchi);
+
+	//cc += t2;
+	c1 = _addcarry_u64(0, cchi, t2, &t2);
+	c1 = _addcarry_u64(c1, 0, 0, &cchi);
+
+	t3 = cchi;
+
+	m = t0 * rho;	// #8
+
+	//cs = (uint128_t)m * mod_lo;	// #9
+	cslo = _mulx_u64(m, n[0], &cshi);	// #9
+
+	//cs += t0;
+	c1 = _addcarry_u64(0, cslo, t0, &cslo);
+	c1 = _addcarry_u64(c1, cshi, 0, &cshi);
+
+	//cs += (uint128_t)m * mod_hi;	// #10
+	cclo = _mulx_u64(m, n[1], &cchi);	// #5
+	c1 = _addcarry_u64(0, cshi, cclo, &cslo);
+	c1 = _addcarry_u64(c1, 0, cchi, &cshi);
+
+	//cs += t1;
+	c1 = _addcarry_u64(0, cslo, t1, &t0);
+	c1 = _addcarry_u64(c1, cshi, 0, &cshi);
+
+	c1 = _addcarry_u64(0, cshi, t2, &t1);
+	_addcarry_u64(0, c1, t3, &t2);
+
+	if (t2) {
+		unsigned char carry = _subborrow_u64(0, t0, n[0], &t0);
+		_subborrow_u64(carry, t1, n[1], &t1);
 	}
-	else
-	{
-		w[0] = t[0];
-		w[1] = t[1];
-	}
 
-#endif
-
+	w[0] = t0;
+	w[1] = t1;
 	return;
 }
 
