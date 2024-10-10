@@ -189,6 +189,56 @@ uint64_t my_clz104(uint64_t n_lo, uint64_t n_hi)
 	return 52 + my_clz52(n_lo);
 }
 
+// count leading zeroes in binary representation
+static __inline
+uint64_t my_clz64(uint64_t n)
+{
+#if (INLINE_ASM && defined(__x86_64__))
+#ifdef __BMI1__
+	uint64_t t;
+	asm(" lzcntq %1, %0\n": "=r"(t) : "r"(n) : "flags");
+	return t;
+#else
+	if (n)
+		return __builtin_clzll(n);
+	return 64;
+#endif
+#else
+#if defined(__GNUC__)
+	if (n)
+		return __builtin_clzll(n);
+	return 64;
+#else
+	if (n == 0)
+		return 52;
+	uint64_t r = 0;
+	if ((n & (0xFFFFFFFFull << 32)) == 0)
+		r += 32, n <<= 32;
+	if ((n & (0xFFFFull << 48)) == 0)
+		r += 16, n <<= 16;
+	if ((n & (0xFFull << 56)) == 0)
+		r += 8, n <<= 8;
+	if ((n & (0xFull << 60)) == 0)
+		r += 4, n <<= 4;
+	if ((n & (0x3ull << 62)) == 0)
+		r += 2, n <<= 2;
+	if ((n & (0x1ull << 63)) == 0)
+		r += 1;
+	return r;
+#endif
+#endif
+}
+
+
+static __inline
+uint64_t my_clz128(uint64_t n_lo, uint64_t n_hi)
+{
+	if (n_hi) {
+		return my_clz64(n_hi);
+	}
+	return 64 + my_clz64(n_lo);
+}
+
 static inline uint64_t my_rdtsc(void)
 {
 #if defined(__x86_64__)
@@ -968,6 +1018,497 @@ static __inline __m512i multiplicative_inverse104_x8(uint64_t* a)
 #define ROUNDING_MODE _MM_FROUND_CUR_DIRECTION
 #endif
 
+#define LO(x) ((uint64_t)((x) & 0xffffffffffffffffull))
+#define HI(x) ((uint64_t)((x) >> 64))
+
+__inline void mulmod128(uint64_t* u, uint64_t* v, uint64_t* w, uint64_t* n, uint64_t rho)
+{
+	uint64_t t0, t1, t2, t3, t4;
+
+	// first round muls
+	uint128_t cross = (uint128_t)u[0] * v[1];
+	uint128_t sqr = (uint128_t)u[0] * v[0];
+	uint64_t m = sqr * rho;
+	uint128_t mn1 = (uint128_t)m * n[1];
+	uint128_t mn0 = (uint128_t)m * n[0];
+
+	// now sort out the additions and shifts
+	// we have:
+	// t0,c0 = LO(sqr) + LO(mn0), where c0 is always 1 unless m is 0
+	// t1,c1 = HI(sqr) + HI(mn0) + LO(mn1) + LO(cross) + c0
+	// t2,c2 = HI(mn1) + HI(cross) + c1
+	// then we shift so we'll have:
+	// t0 = HI(sqr) + HI(mn0) + LO(mn1) + LO(cross) + c0
+	// t1 = HI(mn1) + HI(cross) + c1
+	// t2 = c2
+
+	uint8_t c0, c1, c2;
+
+	t0 = HI(sqr);
+	t1 = HI(mn0);
+	t3 = HI(cross);
+	t4 = HI(mn1);
+
+#if 0 //defined(__x86_64__) && defined(__unix__)
+
+	t2 = m;
+
+	__asm__ volatile (
+		"xorq %%r11, %%r11 \n\t"	/* zero */
+
+		"subq %%rcx, %%r11 \n\t"	/* m != 0 */
+		"movq %3, %%r8 \n\t"
+		"movq %4, %%r9 \n\t"
+		"movq %5, %%r11 \n\t"
+		"adcq %%rbx, %%rax \n\t"	/* c1 = _addcarry_u64(m != 0, t0, t1, &t0); rax = tmp0 */
+		"adcq %%r8, %%r9 \n\t"		/* _addcarry_u64(c1, t3, t4, &t4);			r9 = t1 */
+		"xorq %%rcx, %%rcx \n\t"	/* t2 */
+		"addq %%rdx, %%r11 \n\t"	/* c2 = _addcarry_u64(0, mn1, cross, &t1);  r11 = tmp1*/
+		"adcq $0, %%r9 \n\t"		/* c1 = _addcarry_u64(c2, t4, 0, &t1);		r9 = t1 */
+		"adcq $0, %%rcx \n\t"		/* t2 = c1; */
+		"addq %%r11, %%rax \n\t"	/* c3 = _addcarry_u64(0, tmp0, tmp1, &t0); */
+		"adcq $0, %%r9 \n\t"		/* t1 += t3 */
+		"adcq $0, %%rcx \n\t"		/* t2 += c; */
+		"movq %%r9, %1 \n\t"		/* t1 */
+		: "+&a"(t0), "+&b"(t1), "+&c"(t2)
+		: "r"(t3), "r"(t4), "r"((uint64_t)mn1), "d"((uint64_t)cross)
+		: "r8", "r9", "r10", "r11", "cc", "memory");
+
+#elif 1
+
+	c1 = _addcarry_u64(0, (uint64_t)mn0, (uint64_t)sqr, &t2);
+	c1 = _addcarry_u64(c1, t0, t1, &t0);
+	c1 = _addcarry_u64(c1, t3, t4, &t4);
+
+	c1 = _addcarry_u64(0, (uint64_t)mn1, (uint64_t)cross, &t3);
+	c1 = _addcarry_u64(c1, t4, 0, &t1);
+	t2 = c1;
+
+	c1 = _addcarry_u64(0, t0, t3, &t0);
+	c1 = _addcarry_u64(c1, t1, 0, &t1);
+
+#else
+
+	c1 = _addcarry_u64(m != 0, t0, t1, &t0);//1
+	c2 = _addcarry_u64(0, (uint64_t)mn1, (uint64_t)cross, &t1);//2
+	c3 = _addcarry_u64(0, t0, t1, &t0);
+	c1 = _addcarry_u64(c1, t3, t4, &t4);//1
+	c1 = _addcarry_u64(c2, t4, c3, &t1);//2
+	t2 = c1;//2
+
+
+#endif
+
+	// second round muls
+	
+	cross = (uint128_t)u[1] * v[0];
+	sqr = (uint128_t)u[1] * u[1];
+	c0 = _addcarry_u64(0, (uint64_t)(cross), t0, &t0);
+	m = t0 * rho;
+	mn0 = (uint128_t)m * n[0];
+	mn1 = (uint128_t)m * n[1];
+
+	// now sort out the additions and shifts
+	// we have:
+	// t0,c0 = t0 + LO(cross) + LO(mn0)
+	// t1,c1 = t1 + LO(sqr) + HI(mn0) + LO(mn1) + HI(cross) + c0
+	// t2,c2 = HI(mn1) + HI(sqr) + c1
+	// then we shift so we'll have:
+	// t0 = t1 + LO(sqr) + HI(mn0) + LO(mn1) + HI(cross) + c0
+	// t1 = t2 + HI(mn1) + HI(sqr) + c1
+	// t2 = c2
+
+#if 1
+
+	uint64_t t1s = t1;
+
+	c1 = _addcarry_u64(m != 0, (uint64_t)(sqr), HI(mn0), &t3);
+	c1 = _addcarry_u64(c1, t2, HI(mn1), &t1);
+	t2 = c1;
+
+	c1 = _addcarry_u64(c0, (uint64_t)(mn1), HI(cross), &t4);
+	c1 = _addcarry_u64(c1, t1, HI(sqr), &t1);
+
+	c2 = _addcarry_u64(0, t3, t4, &t0);
+	c2 = _addcarry_u64(c2, t1, 0, &t1);
+	_addcarry_u64(c2, c1, t2, &t2);
+
+	c1 = _addcarry_u64(0, t0, t1s, &w[0]);
+	c1 = _addcarry_u64(c1, t1, 0, &w[1]);
+
+#else
+
+	c1 = _addcarry_u64(m != 0, (uint64_t)(sqr), HI(mn0), &t3);//1
+	c2 = _addcarry_u64(c0, (uint64_t)(mn1), HI(cross), &t4);//2
+	c3 = _addcarry_u64(0, t3, t4, &t0);//3
+	c4 = _addcarry_u64(0, t0, t1, &w[0]);
+
+	c1 = _addcarry_u64(c1, t2, HI(mn1), &t1);//1
+	c2 = _addcarry_u64(c2, t1, HI(sqr), &t1);//2
+	c3 = _addcarry_u64(c3, t1, c4, &w[1]);
+	t2 = c1 + c2 + c3;	//1//2
+
+#endif
+
+	if (t2 > 0) {
+		// conditionally subtract when needed (AMM - only on overflow)
+		c1 = _subborrow_u64(0, w[0], n[0], &w[0]);
+		c1 = _subborrow_u64(c1, w[1], n[1], &w[1]);
+	}
+
+	return;
+	return;
+}
+
+__inline void sqrmod128(uint64_t* u, uint64_t* w, uint64_t* n, uint64_t rho)
+{
+	uint64_t t0, t1, t2, t3, t4, t5;
+
+	// first round muls
+	uint128_t cross = (uint128_t)u[0] * u[1];
+	uint128_t sqr = (uint128_t)u[0] * u[0];
+	uint64_t m = sqr * rho;
+	uint128_t mn1 = (uint128_t)m * n[1];
+	uint128_t mn0 = (uint128_t)m * n[0];
+
+	// now sort out the additions and shifts
+	// we have:
+	// t0,c0 = LO(sqr) + LO(mn0), where c0 is always 1 unless m is 0
+	// t1,c1 = HI(sqr) + HI(mn0) + LO(mn1) + LO(cross) + c0
+	// t2,c2 = HI(mn1) + HI(cross) + c1
+	// then we shift so we'll have:
+	// t0 = HI(sqr) + HI(mn0) + LO(mn1) + LO(cross) + c0
+	// t1 = HI(mn1) + HI(cross) + c1
+	// t2 = c2
+
+	uint8_t c0, c1, c2;
+
+	t0 = HI(sqr);
+	t1 = HI(mn0);
+	t3 = HI(cross);
+	t4 = HI(mn1);
+
+#if 0 //defined(__x86_64__) && defined(__unix__)
+
+	t2 = m;
+
+	__asm__ volatile (
+		"xorq %%r11, %%r11 \n\t"	/* zero */
+
+		"subq %%rcx, %%r11 \n\t"	/* m != 0 */
+		"movq %3, %%r8 \n\t"
+		"movq %4, %%r9 \n\t"
+		"movq %5, %%r11 \n\t"
+		"adcq %%rbx, %%rax \n\t"	/* c1 = _addcarry_u64(m != 0, t0, t1, &t0); rax = tmp0 */
+		"adcq %%r8, %%r9 \n\t"		/* _addcarry_u64(c1, t3, t4, &t4);			r9 = t1 */
+		"xorq %%rcx, %%rcx \n\t"	/* t2 */
+		"addq %%rdx, %%r11 \n\t"	/* c2 = _addcarry_u64(0, mn1, cross, &t1);  r11 = tmp1*/
+		"adcq $0, %%r9 \n\t"		/* c1 = _addcarry_u64(c2, t4, 0, &t1);		r9 = t1 */
+		"adcq $0, %%rcx \n\t"		/* t2 = c1; */
+		"addq %%r11, %%rax \n\t"	/* c3 = _addcarry_u64(0, tmp0, tmp1, &t0); */
+		"adcq $0, %%r9 \n\t"		/* t1 += t3 */
+		"adcq $0, %%rcx \n\t"		/* t2 += c; */
+		"movq %%r9, %1 \n\t"		/* t1 */
+		: "+&a"(t0), "+&b"(t1), "+&c"(t2)
+		: "r"(t3), "r"(t4), "r"((uint64_t)mn1), "d"((uint64_t)cross)
+		: "r8", "r9", "r10", "r11", "cc", "memory");
+
+#elif defined(HAS_ADCX)
+
+	c2 = _addcarryx_u64(0, (uint64_t)mn0, (uint64_t)sqr, &t2);
+	c1 = _addcarryx_u64(0, (uint64_t)mn1, (uint64_t)cross, &t5);//
+	c2 = _addcarryx_u64(c2, t0, t1, &t0);
+	c1 = _addcarryx_u64(c1, t4, t3, &t1);//
+	t2 = c1;//
+
+	c1 = _addcarry_u64(0, t0, t5, &t0);
+	_addcarry_u64(c1, t1, c2, &t1);
+
+#elif 1
+
+	c2 = _addcarry_u64(0, (uint64_t)mn0, (uint64_t)sqr, &t2);
+	c2 = _addcarry_u64(c2, t0, t1, &t0);
+
+	c1 = _addcarry_u64(0, (uint64_t)mn1, (uint64_t)cross, &t5);
+	c1 = _addcarry_u64(c1, t4, t3, &t1);
+	t2 = c1;
+
+	c1 = _addcarry_u64(0, t0, t5, &t0);
+	_addcarry_u64(c1, t1, c2, &t1);
+
+#else
+
+	c1 = _addcarry_u64(m != 0, t0, t1, &t0);//1
+	c2 = _addcarry_u64(0, (uint64_t)mn1, (uint64_t)cross, &t1);//2
+	c3 = _addcarry_u64(0, t0, t1, &t0);
+	c1 = _addcarry_u64(c1, t3, t4, &t4);//1
+	c1 = _addcarry_u64(c2, t4, c3, &t1);//2
+	t2 = c1;//2
+
+
+#endif
+
+	// second round muls
+	c0 = _addcarry_u64(0, (uint64_t)(cross), t0, &t0);
+	sqr = (uint128_t)u[1] * u[1];
+	m = t0 * rho;
+	mn0 = (uint128_t)m * n[0];
+	mn1 = (uint128_t)m * n[1];
+
+	// now sort out the additions and shifts
+	// we have:
+	// t0,c0 = t0 + LO(cross) + LO(mn0)
+	// t1,c1 = t1 + LO(sqr) + HI(mn0) + LO(mn1) + HI(cross) + c0
+	// t2,c2 = HI(mn1) + HI(sqr) + c1
+	// then we shift so we'll have:
+	// t0 = t1 + LO(sqr) + HI(mn0) + LO(mn1) + HI(cross) + c0
+	// t1 = t2 + HI(mn1) + HI(sqr) + c1
+	// t2 = c2
+
+#if 1
+
+	uint64_t t1s = t1;
+
+	c1 = _addcarry_u64(m != 0, (uint64_t)(sqr), HI(mn0), &t3);
+	c1 = _addcarry_u64(c1, t2, HI(mn1), &t1);
+	t2 = c1;
+
+	c1 = _addcarry_u64(c0, (uint64_t)(mn1), HI(cross), &t4);
+	c1 = _addcarry_u64(c1, t1, HI(sqr), &t1);
+
+	c2 = _addcarry_u64(0, t3, t4, &t0);
+	c2 = _addcarry_u64(c2, t1, 0, &t1);
+	_addcarry_u64(c2, c1, t2, &t2);
+
+	c1 = _addcarry_u64(0, t0, t1s, &w[0]);
+	c1 = _addcarry_u64(c1, t1, 0, &w[1]);
+
+#else
+
+	c1 = _addcarry_u64(m != 0, (uint64_t)(sqr), HI(mn0), &t3);//1
+	c2 = _addcarry_u64(c0, (uint64_t)(mn1), HI(cross), &t4);//2
+	c3 = _addcarry_u64(0, t3, t4, &t0);//3
+	c4 = _addcarry_u64(0, t0, t1, &w[0]);
+
+	c1 = _addcarry_u64(c1, t2, HI(mn1), &t1);//1
+	c2 = _addcarry_u64(c2, t1, HI(sqr), &t1);//2
+	c3 = _addcarry_u64(c3, t1, c4, &w[1]);
+	t2 = c1 + c2 + c3;	//1//2
+
+#endif
+
+	if (t2 > 0) {
+		// conditionally subtract when needed (AMM - only on overflow)
+		c1 = _subborrow_u64(0, w[0], n[0], &w[0]);
+		c1 = _subborrow_u64(c1, w[1], n[1], &w[1]);
+	}
+
+	return;
+}
+
+__inline void chkmod128(uint64_t* a, uint64_t* n)
+{
+
+#if 0 //defined(__x86_64__) && defined(__unix__)
+	
+	// not really faster than the branching version below
+	// but probably should be checked on more cpus.
+	uint64_t t0, t1;
+	t0 = a[0];
+	t1 = a[1];
+	__asm__ volatile (
+		"xorq %%r8, %%r8 \n\t"
+		"xorq %%r9, %%r9 \n\t"
+		"subq %2, %%r8 \n\t"		/* t = 0 - n */
+		"sbbq %3, %%r9 \n\t"
+		"addq %0, %%r8 \n\t"		/* t += x */
+		"adcq %1, %%r9 \n\t"
+		"cmovc %%r8, %0 \n\t"
+		"cmovc %%r9, %1 \n\t"
+		: "+&r"(t0), "+&r"(t1)
+		: "r"(n[0]), "r"(n[1])
+		: "r8", "r9", "cc", "memory");
+
+	a[0] = t0;
+	a[1] = t1;
+#else
+
+	if ((a[1] > n[1]) || ((a[1] == n[1]) && (a[0] >= n[0])))
+	{
+		uint8_t c1 = _subborrow_u64(0, a[0], n[0], &a[0]);
+		_subborrow_u64(c1, a[1], n[1], &a[1]);
+	}
+
+#endif
+	return;
+}
+
+__inline void dblmod128(uint64_t* a, uint64_t* n)
+{
+
+#if defined(__x86_64__) && defined(__unix__)
+	// requires GCC_ASM64 syntax
+	uint64_t t1, t0;
+
+	// do the 2-word variant of this:
+	//uint64_t r;
+	//uint64_t tmp = x - n;
+	//uint8_t c = _addcarry_u64(0, tmp, y, &r);
+	//return (c) ? r : x + y;
+	t1 = a[1];
+	t0 = a[0];
+
+	__asm__ volatile (
+		"movq %%rax, %%r8 \n\t"
+		"movq %%rdx, %%r9 \n\t"
+		"subq %4, %%r8 \n\t"		/* t = x - n */
+		"sbbq %5, %%r9 \n\t"
+		"addq %%rax, %0 \n\t"		/* x += x */
+		"adcq %%rdx, %1 \n\t"
+		"addq %%rax, %%r8 \n\t"		/* t = t + x */
+		"adcq %%rdx, %%r9 \n\t"
+		"cmovc %%r8, %0 \n\t"
+		"cmovc %%r9, %1 \n\t"
+		: "+&r"(a[0]), "+&r"(a[1])
+		: "a"(t0), "d"(t1), "r"(n[0]), "r"(n[1])
+		: "r8", "r9", "cc", "memory");
+	
+#else
+
+	uint128_t x = ((uint128_t)a[1] << 64) | a[0];
+	uint128_t n128 = ((uint128_t)n[1] << 64) | n[0];
+	uint128_t r = (x >= n128 - x) ? x - (n128 - x) : x + x;
+	a[1] = (uint64_t)(r >> 64);
+	a[0] = (uint64_t)r;
+
+#endif
+	return;
+}
+
+__inline void submod128(uint64_t* a, uint64_t* b, uint64_t* w, uint64_t* n)
+{
+#if 1 //defined(__x86_64__) && defined(__unix__)
+	// requires GCC_ASM64 syntax
+	__asm__(
+		"movq %6, %%r11 \n\t"
+		"xorq %%r8, %%r8 \n\t"
+		"xorq %%r9, %%r9 \n\t"
+		"movq %0, 0(%%r11) \n\t"
+		"movq %1, 8(%%r11) \n\t"
+		"subq %2, 0(%%r11) \n\t"
+		"sbbq %3, 8(%%r11) \n\t"
+		"cmovc %4, %%r8 \n\t"
+		"cmovc %5, %%r9 \n\t"
+		"addq %%r8, 0(%%r11) \n\t"
+		"adcq %%r9, 8(%%r11) \n\t"
+		"1: \n\t"
+		:
+	: "r"(a[0]), "r"(a[1]), "r"(b[0]), "r"(b[1]), "r"(n[0]), "r"(n[1]), "r"(w)
+		: "r8", "r9", "r11", "cc", "memory");
+
+#else
+
+	uint8_t c;
+	uint64_t t[2];
+	c = _subborrow_u64(0, a[0], b[0], &t[0]);
+	c = _subborrow_u64(c, a[1], b[1], &t[1]);
+	if (c)
+	{
+		c = _addcarry_u64(0, t[0], n[0], &w[0]);
+		c = _addcarry_u64(c, t[1], n[1], &w[1]);
+	}
+	else
+	{
+		w[0] = t[0];
+		w[1] = t[1];
+	}
+
+#endif
+
+	return;
+}
+
+int fermat_prp_128x1(uint64_t* n)
+{
+	// assumes has no small factors.  
+	// assumes n has two 64-bit words, n0 and n1.
+	// do a base-2 fermat prp test using LR binexp.
+
+	uint64_t rho = multiplicative_inverse(n[0]);
+	uint64_t unityval[2]; // = ((uint64_t)0 - n) % n;  // unityval == R  (mod n)
+	uint64_t m;
+	uint64_t r[2];
+	uint64_t e[2];
+	uint64_t one[2] = { 1ULL, 0ULL };
+	uint64_t zero[2] = { 0ULL, 0ULL };
+
+	rho = 0ULL - rho;
+
+	uint128_t n128 = ((uint128_t)n[1] << 64) | n[0];
+	uint128_t unity128 = (uint128_t)0 - n128;
+	unity128 = unity128 % n128;
+	unityval[1] = (uint64_t)(unity128 >> 64);
+	unityval[0] = (uint64_t)unity128;
+
+	e[1] = n[1];
+	e[0] = n[0] - 1;	// n odd: won't overflow
+
+	r[1] = unityval[1];
+	r[0] = unityval[0];
+
+	int lzcnt = my_clz64(e[1]);
+	int protect = (lzcnt < 3) ? 1 : 0;
+
+	// we know the first bit is set and the first squaring is of unity,
+	// so we can do the first iteration manually with no squaring.
+	dblmod128(r, n);
+
+	if (protect)
+	{
+		m = (e[1] <= 1) ? 0 : 1ULL << (62 - lzcnt);   // set a mask at the leading bit - 2
+		while (m > 0)
+		{
+			sqrmod128(r, r, n, rho);
+			chkmod128(r, n);
+
+			if (e[1] & m) dblmod128(r, n);
+			m >>= 1;
+		}
+
+		m = (e[1] >= 1) ? 1ULL << 63 : 1ULL << (62 - my_clz64(e[0]));   // set a mask at the leading bit - 2
+		while (m > 0)
+		{
+			sqrmod128(r, r, n, rho);
+			chkmod128(r, n);
+
+			if (e[0] & m) dblmod128(r, n);
+			m >>= 1;
+		}
+	}
+	else
+	{
+		m = (e[1] <= 1) ? 0 : 1ULL << (62 - lzcnt);   // set a mask at the leading bit - 2
+		while (m > 0)
+		{
+			sqrmod128(r, r, n, rho);
+
+			if (e[1] & m) dblmod128(r, n);
+			m >>= 1;
+		}
+
+		m = (e[1] >= 1) ? 1ULL << 63 : 1ULL << (62 - my_clz64(e[0]));   // set a mask at the leading bit - 2
+		while (m > 0)
+		{
+			sqrmod128(r, r, n, rho);
+
+			if (e[0] & m) dblmod128(r, n);
+			m >>= 1;
+		}
+	}
+
+	chkmod128(r, n);
+	return ((r[0] == unityval[0]) && (r[1] == unityval[1]));
+}
 
 __m512i rem_epu64_x8(__m512i n, __m512i d)
 {
@@ -1893,8 +2434,71 @@ int main(int argc, char** argv)
 	int bits;
 	uint64_t elapsed;
 
+	// test of fermat_prp_128x1 on random 6k+1 inputs
+	for (bits = 118; bits <= 128; bits += 1)
+	{
+		uint32_t numprp = 0;
+		uint64_t ticks1 = my_rdtsc();
+		uint64_t ticks2;
+		uint32_t num = 1000000;
+		double telapsed = 0;
+		int k;
+
+		numprp = 0;
+		k = 0;
+		elapsed = 0;
+		telapsed = 0;
+		do {
+
+			uint128_t x;
+			do {
+				x = my_random();
+				uint128_t maskAnd = ((uint128_t)1 << (bits - 1)) - 1;	// clear msbits
+				uint128_t maskOr = ((uint128_t)1 << (bits - 1)) | ((uint128_t)1 << (bits / 2));	// force msb, force another bit
+				x &= maskAnd;
+				x |= maskOr;
+				x /= 6;
+				x *= 6;	// now a multiple of 6
+				x += 1;	// number like 6*k + 1
+			} while (x >> (bits - 1) != 1);
+
+			prp[0] = (uint64_t)x;
+			prp[1] = (uint64_t)(x >> 64);
+
+			//prp[0] = 0x0d472df9690ed191;
+			//prp[1] = 0x2f;
+
+			ticks1 = my_rdtsc();
+			gettimeofday(&start, NULL);
+
+			uint64_t inc = 4;
+			int j;
+
+			for (j = 0; j < num; j++)
+			{
+				numprp += fermat_prp_128x1(prp);
+				prp[0] += inc;
+				inc = 6 - inc;
+			}
+
+			k++;
+			ticks2 = my_rdtsc();
+			elapsed += (ticks2 - ticks1);
+			gettimeofday(&stop, NULL);
+			telapsed += _difftime(&start, &stop);
+
+		} while (elapsed < (1ull << 30));
+
+		printf("total ticks = %lu, ticks per %d-bit input = %lu\n",
+			elapsed, bits, (elapsed) / (k * num));
+		printf("found %d fermat-prp out of %u %d-bit inputs: %1.2f%%\n",
+			numprp, k * num, bits, 100. * (double)numprp / (double)(k * num));
+		printf("elapsed time: %1.4f sec, %1.4f us / input\n", telapsed, 1000000. * telapsed / (double)(k * num));
+	}
+	printf("\n");
+
 	// test of fermat_prp_52x8 on random 6k+1 inputs
-	for (bits = 20; bits <= 52; bits+=1)
+	for (bits = 20; bits <= 0; bits+=1)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1 = my_rdtsc();
@@ -1958,7 +2562,7 @@ int main(int argc, char** argv)
 	printf("\n");
 
 	// test of fermat_prp_104x8 on random 6k+1 inputs
-	for (bits = 50; bits <= 104; bits+=5)
+	for (bits = 50; bits <= 0; bits+=1)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1 = my_rdtsc();
@@ -2043,7 +2647,7 @@ int main(int argc, char** argv)
 	printf("\n");
 
 	// test of fermat_prp_52x8 on random 6k+1 inputs
-	for (bits = 20; bits <= 52; bits += 1)
+	for (bits = 20; bits <= 0; bits += 1)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1 = my_rdtsc();
@@ -2107,7 +2711,7 @@ int main(int argc, char** argv)
 	printf("\n");
 
 	// test of MR_2sprp_104x8 on random 6k+1 inputs
-	for (bits = 50; bits <= 104; bits+=1)
+	for (bits = 50; bits <= 0; bits+=1)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1 = my_rdtsc();
@@ -2200,7 +2804,7 @@ int main(int argc, char** argv)
 		79, 83, 89, 97};
 		
 	// test of MR_sprp_104x8 on PRP 6k+1 inputs
-	for (bits = 50; bits <= 104; bits+=1)
+	for (bits = 50; bits <= 0; bits+=1)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1 = my_rdtsc();
@@ -2344,7 +2948,7 @@ int main(int argc, char** argv)
 	printf("\n");
 
 	// test of MR_sprp_104x8base on PRP 6k+1 inputs
-	for (bits = 50; bits <= 104; bits+=1)
+	for (bits = 50; bits <= 0; bits+=1)
 	{
 		uint32_t numprp = 0;
 		uint64_t ticks1;
